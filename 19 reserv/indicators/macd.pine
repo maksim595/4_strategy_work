@@ -1,0 +1,10 @@
+//@version=6
+indicator("MACD", overlay=false)
+fast = input.int(12, "Fast", minval=1)
+slow = input.int(26, "Slow", minval=1)
+signal = input.int(9, "Signal", minval=1)
+[macdLine, signalLine, histLine] = ta.macd(close, fast, slow, signal)
+plot(macdLine, "MACD", color=color.blue, linewidth=2)
+plot(signalLine, "Signal", color=color.orange, linewidth=1)
+plot(histLine, "Histogram", style=plot.style_columns, color=histLine >= 0 ? color.green : color.red)
+hline(0, color=color.gray)

@@ -1,0 +1,16 @@
+//@version=6
+indicator("RSI Mean Reversion Signal", overlay=true)
+
+rsiLen    = input.int(14, "RSI Length", minval=1, maxval=100)
+oversold  = input.float(30.0, "Oversold Level", minval=1, maxval=50, step=1.0)
+overbought= input.float(70.0, "Overbought Level", minval=50, maxval=99, step=1.0)
+
+rsiVal = ta.rsi(close, rsiLen)
+
+buySignal  = ta.crossover(rsiVal, oversold)
+sellSignal = ta.crossunder(rsiVal, overbought)
+
+plot(buySignal  ? low  : na, "BuyAnchor",  color=color.new(color.green, 100), display=display.none)
+plot(sellSignal ? high : na, "SellAnchor", color=color.new(color.red,   100), display=display.none)
+plotshape(buySignal,  "BUY",  shape.labelup,   location.belowbar, color=color.green, text="BUY",  size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red,   text="SELL", size=size.small)

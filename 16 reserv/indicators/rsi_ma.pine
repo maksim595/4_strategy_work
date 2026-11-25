@@ -1,0 +1,10 @@
+//@version=6
+indicator("RSI + MA", overlay=false)
+length = input.int(14, "RSI Length", minval=1)
+rsi = ta.rsi(close, length)
+rsi_ma = ta.sma(rsi, 9)
+plot(rsi, "RSI", color=color.purple, linewidth=2)
+plot(rsi_ma, "RSI MA", color=color.orange, linewidth=1)
+hline(70, "Overbought", color=color.red)
+hline(30, "Oversold", color=color.green)
+hline(50, "Middle", color=color.gray)

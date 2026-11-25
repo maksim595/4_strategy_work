@@ -1,0 +1,234 @@
+Сначала вывод: **основная причина, по которой ваш текущий файл не может использовать Pine, заключается в том, что `resin-bundle.js` не собран в формат IIFE, а `window.ResinBridge` вообще не существует**. В то же время есть проблема совместимости версий: `resin-lightweight-charts@0.1.0` требует, чтобы вы предоставили `lightweight-charts` **v5** в качестве peer-зависимости, и вы должны убедиться, что используете одну и ту же версию. Ниже приведены готовые блоки, которые нужно заменить или вставить, и рекомендации по установке.
+
+---
+
+## Рекомендации по установке библиотек
+
+Выполните в корневом каталоге проекта:
+
+```bash
+# 1. Убедитесь, что версия lightweight-charts исправлена (избегайте проблем совместимости)
+npm install lightweight-charts@5.0.5 --save-exact
+
+# 2. Установите resin и адаптер (адаптер требует resin >= 0.2.0 для получения viz)
+npm install @nullarch/resin@0.2.2 @nullarch/resin-lightweight-charts@0.1.0 --save-exact
+
+# 3. Установите esbuild для сборки бандла
+npm install esbuild --save-dev
+```
+
+Создайте `entry.js` в корневом каталоге проекта:
+
+```js
+// entry.js — точка входа для resin-bundle
+export { transpile, run } from '@nullarch/resin';
+export { applyResinViz, renderResinViz } from '@nullarch/resin-lightweight-charts';
+```
+
+Соберите IIFE-бандл:
+
+```bash
+npx esbuild entry.js --bundle --format=iife --global-name=ResinBridge --outfile=resin-bundle.js
+```
+
+После сборки `window.ResinBridge` будет существовать, `typeof ResinBridge` вернёт `"object"`.
+
+---
+
+## Блок 1: Подключение скриптов в `<head>` (замените существующие комментарии и теги script)
+
+**Найдите** в `<head>` вашего HTML:
+
+```html
+    <! <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/5.0.5/lightweight-charts.standalone.production.js">
+	<script src="node_modules/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+	
+    <!-- Pine Script отключён — несовместим с lightweight-charts v5 -->
+```
+
+**Замените на:**
+
+```html
+    <script src="node_modules/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="resin-bundle.js"></script>
+```
+
+**Причина**: `resin-bundle.js` должен быть загружен после `lightweight-charts`, чтобы адаптер мог использовать глобальный объект `LightweightCharts`. Оба скрипта загружаются синхронно, порядок гарантирован.
+
+---
+
+## Блок 2: Замените функцию `loadPineScript` целиком
+
+**Найдите** в `<script>` всю функцию `async function loadPineScript(pineSource){...}` (вместе с последующей строкой `window.loadPineScript=loadPineScript;`).
+
+**Замените на:**
+
+```javascript
+async function loadPineScript(pineSource){
+    // 1. Проверка загрузки зависимостей
+    if(typeof ResinBridge==='undefined'){
+        addLog('❌ resin-bundle.js не загружен (проверьте, собран ли бандл)','pine');
+        return;
+    }
+    if(!lwcChart){
+        addLog('❌ График не инициализирован','pine');
+        return;
+    }
+    if(!pineSource||!pineSource.trim()){
+        addLog('❌ Pine-код пуст','pine');
+        return;
+    }
+
+    // 2. Проверка данных (избегайте seed-баров)
+    if(realTimeBars.length<10||realTimeBars[0].timestamp<1000000000000){
+        addLog('⚠️ Сначала загрузите реальные данные (переключите таймфрейм/инструмент)','pine');
+        return;
+    }
+
+    // 3. Компиляция
+    var result;
+    try{
+        result=ResinBridge.transpile(pineSource);
+    }catch(e){
+        addLog('❌ Ошибка компиляции Pine: '+e.message,'pine');
+        return;
+    }
+    if(!result.ok){
+        addLog('❌ Pine не скомпилирован: '+(result.errors||[]).join('; '),'pine');
+        return;
+    }
+
+    // 4. Постройте объект bars (resin требует формат { time, open, high, low, close, volume })
+    var barsObj={
+        time:realTimeBars.map(function(b){return Math.floor(b.timestamp/1000)}),
+        open:realTimeBars.map(function(b){return b.open}),
+        high:realTimeBars.map(function(b){return b.high}),
+        low:realTimeBars.map(function(b){return b.low}),
+        close:realTimeBars.map(function(b){return b.close}),
+        volume:realTimeBars.map(function(b){return b.volume||0})
+    };
+    var len=barsObj.time.length;
+    if(len<2){
+        addLog('❌ Недостаточно данных для Pine','pine');
+        return;
+    }
+
+    // 5. Очистите предыдущий рендеринг Pine
+    if(pineVizHandle&&typeof pineVizHandle.remove==='function'){
+        try{pineVizHandle.remove()}catch(e){}
+        pineVizHandle=null;
+    }
+
+    // 6. Выполнение + рендеринг
+    try{
+        var runResult=ResinBridge.run(result,barsObj);
+        // resin >= 0.2.0 возвращает { viz, ... }, адаптер принимает viz или runResult
+        var viz=runResult.viz||runResult;
+        pineVizHandle=ResinBridge.applyResinViz(lwcChart,viz,barsObj,{mainSeries:false});
+        addLog('✅ Pine-скрипт наложен ('+len+' баров)','pine');
+    }catch(e){
+        addLog('❌ Ошибка рендеринга Pine: '+e.message,'pine');
+    }
+}
+window.loadPineScript=loadPineScript;
+```
+
+**Ключевые изменения**: `applyResinViz` принимает `viz` или `runResult`, но не `{viz}` (обёртку). Если `runResult.viz` не существует, передайте `runResult` напрямую — адаптер сам определит, как извлечь данные.
+
+---
+
+## Блок 3: Убедитесь, что вызов `updateFractalMarkers` не конфликтует
+
+Ваш `updateFractalMarkers` уже использует API `LightweightCharts.createSeriesMarkers` для v5, это правильно. Оставьте без изменений.
+
+---
+
+## Проверка после выполнения
+
+1. Обновите страницу, выполните в консоли `typeof ResinBridge` → должно вернуть `"object"`.
+2. Выполните `loadPineScript` с тестовым скриптом:
+
+```js
+loadPineScript(`//@version=6
+indicator("SMA20", overlay=true)
+plot(ta.sma(close, 20), color=color.blue, linewidth=2)`)
+```
+
+3. Если всё равно не отображается, проверьте в консоли `runResult.viz` — если `undefined`, значит версия `@nullarch/resin` ниже 0.2.0 или `run` не получил правильный `barsObj`.
+
+---
+
+## Границы возможностей, которые нужно принять
+
+Согласно официальной таблице адаптера:
+
+| Функция Pine | Статус |
+|---|---|
+| `plot` / `plotchar` / `plotcandle` / `barcolor` / `hline` | ✅ |
+| `plotshape` / `plotarrow` | ⚠️ приблизительно |
+| `bgcolor` / `fill` / `label` / `line` / `box` / `table` | ❌ пока не поддерживается |
+
+идея «отрисовывать горизонтальные линии (hline)» **осуществима** — `hline` отображается как `createPriceLine` в lightweight-charts, стиль/ширина/цвет поддерживаются. Но `line.new()` для динамических линий не поддерживается.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 1. Проверка ResinBridge
+typeof window.ResinBridge  // Должно быть "object"
+
+// 2. Проверка функций
+typeof window.ResinBridge.transpile  // "function"
+typeof window.ResinBridge.applyResinViz  // "function"
+
+// 3. Тест Pine Script
+loadPineScript(`//@version=6
+indicator("SMA20", overlay=true)
+plot(ta.sma(close, 20), color=color.blue, linewidth=2)`)
+
+
+
+
+
+typeof window.LightweightCharts   // → "object"
+
+typeof window.ResinBridge         // → "object"
+
+typeof window.ResinBridge.transpile  // → "function"
+
+
+// Проверка загрузки
+console.log('LightweightCharts:', typeof window.LightweightCharts);
+console.log('ResinBridge:', typeof window.ResinBridge);
+
+// Если ResinBridge загрузился — тест Pine Script
+loadPineScript(`//@version=6
+indicator("SMA20", overlay=true)
+plot(ta.sma(close, 20), color=color.blue, linewidth=2)`)
+
+
+
+==================================================
+
+npx esbuild entry.js --bundle --format=esm --external:lightweight-charts --outfile=resin-bundle.js
+
+cd "C:\Users\user\Desktop\ИнтерАкты\trade_projects (2)\4_strategy_work"
+PS C:\Users\user\Desktop\ИнтерАкты\trade_projects (2)\4_strategy_work> npx http-server -p 8080
+
+
+
+

@@ -1,0 +1,80 @@
+// В консоли (F12) — определите функцию с window
+window.addSMA = function(period, color) {
+    if(!lwcChart || realTimeBars.length < period) return;
+    var sma = [];
+    for(var i = period-1; i < realTimeBars.length; i++) {
+        var sum = 0;
+        for(var j = 0; j < period; j++) sum += realTimeBars[i-j].close;
+        sma.push({time: Math.floor(realTimeBars[i].timestamp/1000), value: sum/period});
+    }
+    var lineSeries = lwcChart.addSeries(LightweightCharts.LineSeries, {
+        color: color || '#2196F3',
+        lineWidth: 2,
+        title: 'SMA'+period
+    });
+    lineSeries.setData(sma);
+    addLog('✅ SMA'+period+' добавлен ('+sma.length+' баров)','info');
+    return lineSeries;
+};
+
+// Тест
+addSMA(20, '#2196F3')
+
+
+
+
+
+
+
+// Полный набор нативных индикаторов
+window.addSMA = function(period, color) {
+    if(!lwcChart || realTimeBars.length < period) return;
+    var sma = [];
+    for(var i = period-1; i < realTimeBars.length; i++) {
+        var sum = 0;
+        for(var j = 0; j < period; j++) sum += realTimeBars[i-j].close;
+        sma.push({time: Math.floor(realTimeBars[i].timestamp/1000), value: sum/period});
+    }
+    var lineSeries = lwcChart.addSeries(LightweightCharts.LineSeries, {
+        color: color || '#2196F3',
+        lineWidth: 2,
+        title: 'SMA'+period
+    });
+    lineSeries.setData(sma);
+    addLog('✅ SMA'+period+' добавлен ('+sma.length+' баров)','info');
+    return lineSeries;
+};
+
+window.addEMA = function(period, color) {
+    if(!lwcChart || realTimeBars.length < period) return;
+    var ema = [], k = 2/(period+1), emaValue = realTimeBars[0].close;
+    for(var i = 0; i < realTimeBars.length; i++) {
+        emaValue = realTimeBars[i].close * k + emaValue * (1-k);
+        ema.push({time: Math.floor(realTimeBars[i].timestamp/1000), value: emaValue});
+    }
+    var lineSeries = lwcChart.addSeries(LightweightCharts.LineSeries, {
+        color: color || '#FF9800',
+        lineWidth: 2,
+        title: 'EMA'+period
+    });
+    lineSeries.setData(ema);
+    addLog('✅ EMA'+period+' добавлен ('+ema.length+' баров)','info');
+    return lineSeries;
+};
+
+// Тесты
+addSMA(20, '#2196F3')
+addEMA(12, '#FF9800')
+addEMA(26, '#2196F3')
+
+
+
+typeof ResinBridge  // Должно быть "object"
+
+typeof ResinBridge.transpile  // "function"
+
+typeof ResinBridge.applyResinViz  // "function"
+
+
+
+

@@ -1,0 +1,9 @@
+{
+  "files": [
+    "sma3.pine",
+    "ema_cross.pine",
+    "bollinger.pine",
+    "rsi_ma.pine",
+    "macd.pine"
+  ]
+}

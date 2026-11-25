@@ -1,0 +1,54 @@
+//@version=6
+indicator("METS Signal (Adapted)", overlay=true)
+
+// ─── Настройки ───
+emaFastLen = input.int(10, "EMA Fast")
+emaSlowLen = input.int(50, "EMA Slow")
+volLen     = input.int(20, "Volume MA")
+volThr     = input.float(1.5, "Volume Threshold", step=0.1)
+swLen      = input.int(10, "Swing Left Bars")
+swLenR     = input.int(5,  "Swing Right Bars")
+
+// ─── EMA (только те, что поддерживаются) ───
+eFast = ta.ema(close, emaFastLen)
+eSlow = ta.ema(close, emaSlowLen)
+
+// ─── Объём ───
+avgVol   = ta.sma(volume, volLen)
+volHigh  = volume >= avgVol * volThr
+
+// ─── Swing-структура (без line.new!) ───
+ph = ta.pivothigh(high, swLen, swLenR)
+pl = ta.pivotlow(low, swLen, swLenR)
+
+var float lastPH = na
+var float lastPL = na
+if not na(ph)
+    lastPH := ph
+if not na(pl)
+    lastPL := pl
+
+higherHigh = not na(lastPH) and not na(lastPH[1]) and lastPH > lastPH[1]
+higherLow  = not na(lastPL) and not na(lastPL[1]) and lastPL > lastPL[1]
+bullStruct = higherHigh or higherLow
+
+lowerHigh  = not na(lastPH) and not na(lastPH[1]) and lastPH < lastPH[1]
+lowerLow   = not na(lastPL) and not na(lastPL[1]) and lastPL < lastPL[1]
+bearStruct = lowerHigh or lowerLow
+
+// ─── Условия входа (конфлюэнс) ───
+buySignal  = close > eSlow and volHigh and bullStruct and close > eFast
+sellSignal = close < eSlow and volHigh and bearStruct and close < eFast
+
+// ─── Якорь для отрисовки (как в рабочих скриптах) ───
+plot(buySignal  ? low  : na, "BuyAnchor",  color=color.new(color.green, 100), display=display.none)
+plot(sellSignal ? high : na, "SellAnchor", color=color.new(color.red,   100), display=display.none)
+
+// ─── Маркеры BUY/SELL ───
+plotshape(buySignal,  "BUY",  shape.labelup,   location.belowbar, color=color.green, text="BUY",  size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red,   text="SELL", size=size.small)
+
+// ─── Визуализация поддерживаемых элементов ───
+plot(eFast, "EMA Fast", color=color.aqua,   linewidth=1)
+plot(eSlow, "EMA Slow", color=color.blue,   linewidth=2)
+plot(volHigh ? volume : na, "High Vol", style=plot.style_columns, color=color.new(color.lime, 20))

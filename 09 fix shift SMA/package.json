@@ -1,0 +1,25 @@
+{
+  "name": "4_strategy_work",
+  "version": "1.0.0",
+  "description": "4bin_bot3 v0.25 — lightweight-charts v5 + Pine Script мост",
+  "main": "resin-bundle.js",
+  "scripts": {
+    "build:resin": "esbuild entry.js --bundle --format=iife --outfile=resin-bundle.js",
+    "install:all": "npm install && npm run build:resin"
+  },
+  "keywords": [
+    "trading",
+    "pine-script",
+    "lightweight-charts"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@nullarch/resin": "0.2.2",
+    "@nullarch/resin-lightweight-charts": "0.1.0",
+    "lightweight-charts": "5.0.0"
+  }
+}

@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Фрактальный бот v0.24 | Williams Fractals + Bridge | МСК</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:linear-gradient(135deg,#f0f4fa,#e6edf5 100%);font-family:'Inter','Segoe UI',system-ui,sans-serif;padding:20px;color:#1a2634}
+        .container{max-width:1600px;margin:0 auto}
+        .card{background:#fff;border-radius:28px;box-shadow:0 4px 14px rgba(0,0,0,0.05),0 1px 3px rgba(0,0,0,0.03);padding:1.2rem 1.8rem;margin-bottom:1.4rem;border:1px solid #e2edf2}
+        .flex-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px}
+        h1{font-size:1.7rem;font-weight:700;background:linear-gradient(120deg,#1e4b8f,#3b82f6);-webkit-background-clip:text;background-clip:text;color:transparent}
+        .stats-grid{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1.4rem}
+        .stat-card{background:white;border-radius:24px;padding:0.9rem 1.3rem;flex:1;min-width:130px;border:1px solid #e2edf2}
+        .stat-label{font-size:0.7rem;font-weight:600;color:#5b6e8c;letter-spacing:0.4px}
+        .stat-value{font-size:1.5rem;font-weight:700;color:#0f2b3d;margin-top:6px}
+        .bot-status-indicator{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:30px;background:#f1f5f9;font-size:0.8rem;font-weight:600}
+        .status-dot{width:12px;height:12px;border-radius:50%;background:#94a3b8;transition:background 0.3s ease}
+        .status-dot.active{background:#22c55e;box-shadow:0 0 8px #22c55e}
+        .instrument-deposit-row{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px}
+        .instrument-selector{display:flex;align-items:center;gap:8px;background:white;padding:6px 14px;border-radius:30px;border:1px solid #cbd5e1}
+        .instrument-selector input{border:none;padding:6px 12px;border-radius:20px;font-weight:600;width:130px;text-transform:uppercase}
+        .instrument-selector button{padding:6px 14px;min-width:auto;font-size:0.8rem}
+        .deposit-selector{display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:6px 14px;border-radius:30px;border:1px solid #cbd5e1}
+        .deposit-selector label{font-size:0.8rem;font-weight:600;color:#475569}
+        .deposit-selector input{width:100px;padding:6px 12px;border-radius:20px;border:1px solid #cbd5e1;font-weight:600;text-align:center}
+        .deposit-selector button{padding:6px 14px;min-width:auto;font-size:0.8rem}
+        .positive{color:#10b981}.negative{color:#ef4444}
+        .btn-group{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+        button{background:#f1f5f9;border:1px solid #cbd5e1;padding:10px 24px;border-radius:40px;font-weight:600;font-size:0.85rem;cursor:pointer;transition:0.2s;min-width:200px;flex:1;text-align:center}
+        button.primary{background:#2563eb;border-color:#2563eb;color:white;box-shadow:0 2px 6px rgba(37,99,235,0.2)}
+        button.danger{background:#fee2e2;border-color:#fecaca;color:#b91c1c}
+        button.warning{background:#fffbeb;border-color:#fde68a;color:#b45309}
+        button:hover{transform:translateY(-1px);filter:brightness(0.96)}
+        @media(max-width:768px){button{min-width:140px;padding:8px 16px;font-size:0.8rem}}
+        .settings-panel{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;background:#f8fafd;padding:16px 20px;border-radius:32px}
+        .setting-item{background:white;padding:5px 14px;border-radius:40px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:8px}
+        .setting-item label{font-size:0.8rem;font-weight:500;color:#2c3e50}
+        select,input{background:white;border:1px solid #cbd5e1;padding:5px 10px;border-radius:28px;font-size:0.8rem}
+        .param-group{display:flex;gap:4px;align-items:center}
+        .param-group input{width:70px}
+        .param-group select{width:60px;padding:5px 2px}
+        .backstep-display{font-weight:700;color:#2563eb;min-width:20px;text-align:center}
+        .backstep-status{display:inline-block;padding:3px 10px;border-radius:14px;font-size:0.65rem;font-weight:600;background:#fef3c7;color:#92400e}
+        .strategy-flags-box{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;background:#f0fdf4;padding:10px 16px;border-radius:24px;border:1px solid #bbf7d0}
+        .strategy-flag{display:flex;align-items:center;gap:6px;background:white;padding:5px 12px;border-radius:20px;border:2px solid #e2e8f0;font-size:0.75rem;cursor:pointer;transition:all 0.2s}
+        .strategy-flag.checked{border-color:#22c55e;background:#f0fdf4}
+        .strategy-flag input{width:16px;height:16px;accent-color:#22c55e;cursor:pointer}
+        .notifications-panel{background:linear-gradient(135deg,#e0e7ff,#c7d2fe);padding:12px 20px;border-radius:32px;margin-top:16px;border:2px solid #6366f1}
+        .notifications-grid{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+        .notification-inline{display:flex;align-items:center;gap:8px;background:white;padding:6px 14px;border-radius:30px;border:1px solid #a5b4fc;flex-wrap:wrap}
+        .notification-inline input[type="text"]{padding:5px 10px;border-radius:20px;border:1px solid #a5b4fc;font-size:0.75rem}
+        .notification-inline input#tgBotToken{width:160px}
+        .notification-inline input#tgChatId{width:90px}
+        .notification-inline .checkbox-label{display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#4338ca;font-weight:600}
+        .notification-inline select,.notification-inline input[type="number"]{font-size:0.7rem;padding:4px 6px;width:70px}
+        .test-btn{padding:5px 12px;font-size:0.7rem;min-width:auto;background:#6366f1;color:white;border-color:#6366f1}
+        .signal-badge{display:inline-block;border-radius:100px;padding:8px 24px;font-weight:700}
+        .signal-long{background:#d1fae5;color:#065f46;border-left:5px solid #10b981}
+        .signal-short{background:#fee2e2;color:#991b1b;border-left:5px solid #ef4444}
+        .signal-wait{background:#eef2ff;color:#1e40af}
+        .log-area{background:#fefefe;border-radius:20px;padding:12px;max-height:240px;overflow-y:auto;font-family:monospace;font-size:0.75rem;border:1px solid #e9edf2}
+        .log-entry{padding:6px 10px;border-left:3px solid;margin-bottom:6px;background:#fafcff;border-radius:12px}
+        table{width:100%;border-collapse:collapse;font-size:0.8rem}
+        th,td{padding:10px 6px;border-bottom:1px solid #e9edf2;text-align:left}
+        .tv-wrapper{background:#fff;border-radius:24px;border:1px solid #e2e8f0;overflow:hidden;transition:height 0.3s ease}
+        #tvWidgetContainer{width:100%;height:520px;min-height:400px}
+        .height-control{display:flex;align-items:center;gap:12px;margin-top:8px;margin-bottom:8px;background:#f1f5f9;padding:6px 16px;border-radius:40px;width:fit-content}
+        .height-control input{width:120px;cursor:pointer}
+        .real-badge{background:#dbeafe;border-radius:30px;padding:4px 14px;font-size:0.7rem;font-weight:600;color:#1e40af}
+        .profile-controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0}
+        .profile-controls button{min-width:160px}
+        .profile-name-display{font-size:0.75rem;color:#64748b;padding:4px 12px;background:#f1f5f9;border-radius:20px}
+        .positions-panel{background:#f0f9ff;border:1px solid #7dd3fc;border-radius:20px;padding:12px 16px;margin-top:12px}
+        .positions-title{font-size:0.8rem;font-weight:600;color:#0369a1;margin-bottom:8px}
+        .position-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e0f2fe;font-size:0.75rem}
+        .position-item:last-child{border-bottom:none}
+        .fix-highlight{background:#fef9c3;padding:2px 6px;border-radius:6px;font-weight:600}
+        .fix-info{background:#dcfce7;border:1px solid #22c55e;padding:12px;border-radius:12px;margin-top:12px;font-size:0.75rem}
+        .heartbeat-badge{font-size:0.65rem;padding:3px 10px;border-radius:20px;background:#fef3c7;color:#92400e}
+        .connection-bar{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;padding:8px 16px;background:#f8fafd;border-radius:20px;align-items:center}
+        .connection-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.7rem;font-weight:600}
+        .connection-chip.live{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+        .connection-chip.waiting{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+        .connection-chip.offline{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+        .exchange-section-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:0.65rem;font-weight:700;letter-spacing:0.5px}
+        .section-spot{background:#dbeafe;color:#1e40af}
+        .section-futures{background:#fce7f3;color:#9d174d}
+        .section-demo{background:#fef3c7;color:#92400e}
+        .section-real{background:#fee2e2;color:#991b1b}
+        .bridge-status-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+        .leverage-badge{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700}
+        footer{text-align:center;font-size:0.7rem;color:#6c7a91;margin-top:1.5rem}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="flex-row">
+            <div>
+                <h1>📡 Фрактальный трейдер v0.24 · Binance Bridge</h1>
+                <div style="font-size:0.8rem;margin-top:6px">
+                    <span id="instrumentDisplay">ETH/USDT</span> | Williams Fractals | 
+                    <span class="fix-highlight">Backstep+Стратегии</span> | МСК (UTC+3) | 
+                    <span class="heartbeat-badge" id="heartbeatBadge">💓 пульс: —</span>
+                </div>
+                <div class="bridge-status-row">
+                    <span id="bridgeStatusChip" class="connection-chip waiting">⏳ Мост: ожидание</span>
+                    <span id="exchangeSectionBadge" class="exchange-section-badge section-demo">—</span>
+                    <span id="exchangeModeBadge" class="leverage-badge">—</span>
+                    <span id="bridgeSymbolBadge" class="exchange-section-badge section-demo" style="display:none">📎 <span id="bridgeSymbolDisplay">—</span></span>
+                    <span id="bridgeLeverageBadge" class="leverage-badge" style="display:none">×1</span>
+                    <span id="bridgeSyncWarning" style="display:none;color:#dc2626;font-size:0.65rem;font-weight:600">⚠️ Пары не совпадают</span>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+                <div class="bot-status-indicator"><span class="status-dot" id="botStatusDot"></span><span id="botStatusText">Ожидание</span></div>
+                <div class="real-badge" id="connectionStatus">🔄 загрузка...</div>
+            </div>
+        </div>
+        <div class="connection-bar">
+            <span style="font-size:0.7rem;font-weight:600;color:#475569">🔌 Каналы:</span>
+            <span id="wsStatusBadge" class="connection-chip offline">WS: —</span>
+            <span id="bridgeStatusBadge" class="connection-chip waiting">Мост: —</span>
+            <span id="priceSourceBadge" class="connection-chip offline">Цена: WS</span>
+        </div>
+        <div class="instrument-deposit-row">
+            <div class="instrument-selector"><label>🔧 Инструмент:</label><input type="text" id="instrumentInput" value="ETHUSDT"><button id="changeInstrumentBtn" class="primary">Применить</button></div>
+            <div class="deposit-selector"><label>💰 Депозит:</label><input type="number" id="depositInput" step="500" value="10000"><button id="setDepositBtn" class="primary">Применить</button></div>
+        </div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">💰 ВИРТ. ДЕПОЗИТ</div><div class="stat-value" id="virtualBalanceDisplay">10000.00 $</div></div>
+        <div class="stat-card"><div class="stat-label">📈 ПОЗИЦИЯ</div><div class="stat-value" id="positionStatus">Нет</div></div>
+        <div class="stat-card"><div class="stat-label">📊 НЕРЕАЛ. P&L</div><div class="stat-value" id="unrealizedPL">0.00 $</div></div>
+        <div class="stat-card"><div class="stat-label">🏆 ВСЕГО СДЕЛОК</div><div class="stat-value" id="totalTrades">0</div></div>
+        <div class="stat-card"><div class="stat-label">✅ УСПЕШНЫХ</div><div class="stat-value" id="winTrades">0 (0%)</div></div>
+        <div class="stat-card"><div class="stat-label">❌ НЕУСПЕШНЫХ</div><div class="stat-value" id="lossTrades">0 (0%)</div></div>
+        <div class="stat-card"><div class="stat-label">💵 ЧИСТЫЙ P&L</div><div class="stat-value" id="netProfit">0.00 $</div></div>
+    </div>
+    <div class="card">
+        <div class="btn-group">
+            <button id="startBotBtn" class="primary">▶ ЗАПУСТИТЬ БОТА</button>
+            <button id="stopBotBtn" class="danger">⏹️ ОСТАНОВИТЬ БОТА</button>
+            <button id="resetAccountBtn" class="warning">🔄 Сброс истории</button>
+            <button id="clearLogBtn">🗑️ Очистить лог</button>
+        </div>
+        <div class="settings-panel">
+            <div class="setting-item"><label>⏱️ Таймфрейм:</label><select id="timeframeSelect"><option value="1m" selected>1 мин</option><option value="5m">5 мин</option><option value="15m">15 мин</option><option value="1h">1 час</option><option value="4h">4 часа</option><option value="1d">1 день</option></select></div>
+            <div class="setting-item"><label>🔍 Фрактал (L):</label><input type="number" id="fractalPeriod" value="2" step="1" min="1" max="5" style="width:50px"></div>
+            <div class="setting-item"><label>⏮️ Backstep:</label><input type="range" id="backstepSlider" value="2" min="0" max="6" step="1" style="width:70px"><span id="backstepValue" class="backstep-display">2</span><span class="backstep-status" id="backstepStatus">2 бара подтверждения</span></div>
+            <div class="setting-item"><label>📐 Риск:</label><div class="param-group"><input type="number" id="riskValue" value="1.0" step="0.1" min="0.1"><select id="riskUnit"><option value="percent">%</option><option value="usd">$</option></select></div></div>
+            <div class="setting-item"><label>🎯 Тейк-профит:</label><div class="param-group"><input type="number" id="tpValue" value="2.0" step="0.1" min="0"><select id="tpUnit"><option value="percent">%</option><option value="usd">$</option></select></div></div>
+            <div class="setting-item"><label>🛑 Стоп-лосс:</label><div class="param-group"><input type="number" id="slValue" value="1.0" step="0.1" min="0"><select id="slUnit"><option value="percent">%</option><option value="usd">$</option></select></div></div>
+            <div class="setting-item"><label>⏲️ Таймер (баров):</label><input type="number" id="holdBars" value="" step="1" min="1" max="100" style="width:60px" placeholder="—"></div>
+            <div class="setting-item"><label>🔄 Инверсия:</label><select id="invertSignal"><option value="false">Выкл</option><option value="true">Вкл</option></select></div>
+            <div class="setting-item"><label>📰 Без свечи:</label><input type="checkbox" id="noCandleCheck" style="width:18px;height:18px"></div>
+            <div class="setting-item"><label>⚡ Мульти:</label><select id="multiModeSelect"><option value="off">Выкл</option><option value="add">Добавление</option><option value="exclude">Исключение</option></select></div>
+            <div class="setting-item"><label>🔢 Множитель:</label><input type="number" id="multiplierValue" value="1.0" step="0.1" min="0.1" max="10" style="width:60px"></div>
+            <div class="setting-item"><label>🔧 StepSize:</label><input type="text" id="manualStepSize" value="" placeholder="auto" style="width:60px"></div>
+            <div class="setting-item"><label>📐 Нормализация:</label><input type="checkbox" id="normalizeQtyCheck" checked style="width:18px;height:18px"></div>
+            <div class="setting-item"><label>🔄 Синхр. баланса:</label><input type="checkbox" id="syncBalanceCheck" style="width:18px;height:18px"></div>
+        </div>
+        <div class="strategy-flags-box">
+            <span style="font-size:0.7rem;font-weight:700;color:#166534;margin-right:8px">🔧 Стратегии:</span>
+            <label class="strategy-flag" id="flagSameRisk"><input type="checkbox" id="checkboxSameRisk"> ✅ Риск только от сонаправленных</label>
+            <label class="strategy-flag" id="flagResetSeries"><input type="checkbox" id="checkboxResetSeries"> ✅ Сброс серии убытков</label>
+            <label class="strategy-flag" id="flagExcludeOnly"><input type="checkbox" id="checkboxExcludeOnly"> ✅ Exclude: только противоположные</label>
+        </div>
+        <div class="fix-info"><strong>✅ v0.24:</strong> Williams Fractals | Двусторонний мост | Подтверждения | Плечо в логах | Telegram с риском $ | Без предиктора</div>
+        <div class="notifications-panel">
+            <div class="notifications-grid">
+                <div class="notification-inline"><label style="font-size:0.75rem;font-weight:600;color:#4338ca">🔔 Telegram:</label><input type="text" id="tgBotToken" placeholder="Token"><input type="text" id="tgChatId" placeholder="Chat ID"><label class="checkbox-label"><input type="checkbox" id="tgEnabled">Вкл</label><button class="test-btn" id="testTgBtn">📤 Тест</button></div>
+                <div class="notification-inline"><label style="font-size:0.7rem">⏱️ Таймаут (с):</label><input type="number" id="tgTimeout" value="15" min="5" max="60" step="1"></div>
+                <div class="notification-inline"><label style="font-size:0.7rem">🔄 Повторов:</label><input type="number" id="tgRetries" value="2" min="0" max="5" step="1"></div>
+                <div class="notification-inline"><label style="font-size:0.7rem">📡 Сигналы:</label><select id="tgSignalNotify"><option value="all">Все</option><option value="with_trade">Со сделкой</option></select></div>
+            </div>
+        </div>
+        <div class="flex-row" style="margin-top:12px">
+            <span id="botModeIndicator" class="real-badge" style="background:#e9ecef">⚙️ СИГНАЛЫ (бот выкл)</span>
+            <span id="signalLabel" class="signal-badge signal-wait">⚪ Ожидание</span>
+            <span><strong>Цена:</strong> <span id="currentPriceVal">---</span> USDT</span>
+            <span><strong>ТФ:</strong> <span id="currentTFDisplay">1m</span></span>
+            <span id="bridgeLeverageDisplay" style="display:none"><strong>Плечо:</strong> <span id="currentLeverageVal">×1</span></span>
+        </div>
+        <div id="signalDetails" style="margin-top:12px;font-size:0.8rem;color:#2c5282"></div>
+        <div class="positions-panel" id="positionsPanel" style="display:none"><div class="positions-title">📊 Активные позиции:</div><div id="positionsList"></div></div>
+        <div class="profile-controls">
+            <span class="profile-name-display" id="currentProfileName">Профиль: не загружен</span>
+            <button id="saveProfileBtn">💾 Сохранить профиль</button>
+            <button id="loadProfileBtn">📂 Загрузить профиль</button>
+            <input type="file" id="profileFileInput" accept=".json" style="display:none">
+        </div>
+    </div>
+    <div class="tv-wrapper" id="tvWrapper"><div id="tvWidgetContainer"></div></div>
+    <div class="height-control"><span>📐 Высота графика:</span><input type="range" id="chartHeightSlider" min="400" max="800" step="10" value="520"><span id="heightValue">520px</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;margin:20px 0">
+        <div style="flex:1.3"><div class="card"><div class="flex-row"><h3>📋 История сделок</h3><span class="real-badge" id="tradesCountBadge">0 / 500</span></div><div style="max-height:300px;overflow-y:auto"><table><thead><tr><th>Время</th><th>Тип</th><th>Вход</th><th>Выход</th><th>П/У</th><th>Риск $</th><th>Причина</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="7">Нет сделок</td></tr></tbody></table></div></div></div>
+        <div style="flex:1.7"><div class="card"><div class="flex-row"><span>📡 Лог</span><span class="real-badge" id="logCountBadge">0 / 100</span></div><div id="eventLog" class="log-area" style="max-height:280px"></div></div></div>
+    </div>
+    <footer>⚡ Binance WebSocket + Bridge v0.24 | Williams Fractals + Двусторонняя связь</footer>
+</div>
+
+<script>
+function roundToStepSize(quantity, stepSize) {
+    const step = parseFloat(stepSize);
+    const qty = parseFloat(quantity);
+    const stepStr = stepSize.toString();
+    let decimals = 0;
+    if (stepStr.indexOf('.') !== -1) {
+        decimals = stepStr.split('.')[1].length;
+    } else if (stepStr.indexOf('e-') !== -1) {
+        decimals = parseInt(stepStr.split('e-')[1]);
+    }
+    const multiplier = Math.pow(10, decimals);
+    const qtyInt = Math.round(qty * multiplier);
+    const stepInt = Math.round(step * multiplier);
+    const roundedInt = Math.floor(qtyInt / stepInt) * stepInt;
+    const rounded = roundedInt / multiplier;
+    return rounded.toFixed(decimals);
+}
+
+const BOT_VERSION='0.24';
+const MAX_TRADES_COUNT=500,MAX_LOG_ENTRIES=100,MAX_BARS_COUNT=200,TRADES_CLEANUP_THRESHOLD=50,MAX_POSITIONS=10;
+let virtualBalance=10000,positions=[],tradesHistory=[],totalTradesCount=0,winTradesCount=0,lossTradesCount=0,netProfitSum=0;
+let riskConfig={value:1,unit:'percent'},tpConfig={value:2,unit:'percent'},slConfig={value:1,unit:'percent'};
+let holdBarsCount=null,fractalPeriod=2,userBackstep=2,invertSignal=false,noCandleCheck=false,selectedTimeframe="1m",botActive=false,currentInstrument='ETHUSDT';
+let multiModeConfig={mode:'off',multiplier:1};
+let strategyFlags={sameSideRisk:false,resetLossSeries:false,excludeOnlyOpposite:false};
+let notificationsConfig={telegram:{enabled:false,botToken:'',chatId:'',timeout:15,retries:2,signalNotify:'all'}};
+let realTimeBars=[],currentPrice=0,lastSignalBarIndex=-1,lastProcessedCandleTime=null;
+let ws=null,wsReconnectTimer=null,wsConnected=false;
+let tvWidgetInstance=null,tvWidgetReady=false;
+let currentProfileName='не загружен',lossStreak=[];
+let wsSeenTimestamps=new Set();
+let tgPendingQueue=[],tgProcessing=false;
+let autoPulseTimer=null,forceAnalysisTimer=null,lastBarAddedTime=0;
+let wsLastDataTime=0,lastPriceUpdate=0;
+
+// === BRIDGE STATE ===
+let bridgeRetranslatorReady=false;
+let bridgeExchangeSection='—';
+let bridgeExchangeMode='—';
+let bridgeCurrentLeverage=1;
+let bridgeSymbol='';
+let priceSource='ws'; // 'ws' или 'bridge'
+
+const $=id=>document.getElementById(id);
+
+// ============================================================
+//  PRODUCTION: ликвидация, комиссии, адаптер, синхронизация
+// ============================================================
+const FEE_RATE = 0.0004;
+let syncBalanceOnStart = false;
+
+function calculateSandboxLiquidation(entryPrice, size, side, leverage, deposit, marginType = 'ISOLATED') {
+    const notional = size * entryPrice, marginUsed = notional / leverage, mm = 0.004;
+    if (marginUsed > deposit && deposit > 0) return { error: true, message: `Маржа $${marginUsed.toFixed(2)} > депозит $${deposit.toFixed(2)}` };
+    let liqPrice;
+    if (marginType === 'CROSSED') liqPrice = side === 'long' ? entryPrice * (1 - deposit/notional + mm) : entryPrice * (1 + deposit/notional - mm);
+    else liqPrice = side === 'long' ? entryPrice * (1 - 1/leverage + mm) : entryPrice * (1 + 1/leverage - mm);
+    return { liqPrice, marginUsed, freeMargin: deposit - marginUsed, notional, leverage, marginType,
+        distancePercent: (side === 'long' ? (entryPrice - liqPrice) : (liqPrice - entryPrice)) / entryPrice * 100, initialMarginRate: (100/leverage).toFixed(1) + '%' };
+}
+
+function recalculateLimits() {
+    const cp = parseFloat($('currentPriceVal')?.innerText) || currentPrice || 0;
+    if (cp > 0) window.maxLeverageByBalance = Math.floor(virtualBalance / (5 * 0.01));
+    if ($('virtualBalanceDisplay')) $('virtualBalanceDisplay').innerText = formatUSD(virtualBalance);
+    checkLiquidationAfterBalanceChange(); updateUI();
+}
+
+function checkLiquidationAfterBalanceChange() {
+    if (!positions.length || !currentPrice) return;
+    positions.slice().forEach(p => {
+        if (!p.liqPrice) return;
+        if ((p.side === 'long' && currentPrice <= p.liqPrice) || (p.side === 'short' && currentPrice >= p.liqPrice)) {
+            addLog('⚠️ ЛИКВИДАЦИЯ! ' + p.side.toUpperCase() + ' @ $' + p.liqPrice.toFixed(2), 'error');
+            sendTgMessage('⚠️ ЛИКВИДАЦИЯ!\n' + p.side.toUpperCase() + ' ' + p.size.toFixed(4) + ' @ $' + p.entryPrice.toFixed(2) + '\nЛикв: $' + p.liqPrice.toFixed(2) + '\nДепозит: $' + virtualBalance.toFixed(2));
+            closePositionById(p.id, p.liqPrice, 'Ликвидация');
+        }
+    });
+}
+
+function getNetPosition() {
+    const longs = positions.filter(p => p.side === 'long'), shorts = positions.filter(p => p.side === 'short');
+    const ls = longs.reduce((s, p) => s + p.size, 0), ss = shorts.reduce((s, p) => s + p.size, 0);
+    return { netSize: ls - ss, netSide: ls > ss ? 'long' : ls < ss ? 'short' : 'none', longCount: longs.length, shortCount: shorts.length, totalPositions: positions.length };
+}
+
+// ============================================================
+//  АДАПТЕР: ОТПРАВКА НА БИРЖУ С ПОДДЕРЖКОЙ POSITIONSIDE
+// ============================================================
+async function sendAdaptedOrder(action, params) {
+    if (!bridgeRetranslatorReady) {
+        addLog('⚠️ Мост неактивен — ордер не отправлен: ' + action, 'bridge');
+        return { success: false, error: 'Bridge not ready' };
+    }
+    
+    const symbol = params.symbol || currentInstrument;
+    let qty = parseFloat(params.quantity);
+    
+    // Нормализация через сервер (сервер сам округлит)
+    if ($('normalizeQtyCheck')?.checked) {
+        try {
+            const info = await sendCommand('getSymbolInfo', { symbol });
+            const stepSize = info.data?.stepSize || '0.001';
+            const step = parseFloat(stepSize);
+            const decimals = stepSize.includes('.') ? stepSize.split('.')[1].length : 
+                            (stepSize.includes('e-') ? parseInt(stepSize.split('e-')[1]) : 0);
+            qty = Math.floor(qty / step) * step;
+            qty = parseFloat(qty.toFixed(decimals));
+        } catch(e) {
+            if (symbol.includes('ETH')) qty = Math.floor(qty * 100) / 100;
+            else if (symbol.includes('BTC')) qty = Math.floor(qty * 1000) / 1000;
+            else qty = Math.floor(qty * 100) / 100;
+        }
+        addLog(`🔧 Нормализация: ${params.quantity} → ${qty}`, 'bridge');
+    }
+    
+    if (qty <= 0) {
+        addLog(`⚠️ Пропущен ордер: qty=${qty} (меньше минимального шага)`, 'bridge');
+        return { success: false, error: 'Quantity too small' };
+    }
+    
+    const baseParams = { 
+        symbol, 
+        quantity: String(qty), 
+        virtualDeposit: virtualBalance, 
+        virtualLeverage: bridgeCurrentLeverage 
+    };
+    
+    // Определяем positionSide на основе закрываемой позиции
+    let positionSide = null;
+    if (action === 'closeLong' || action === 'closeAllLong') positionSide = 'LONG';
+    if (action === 'closeShort' || action === 'closeAllShort') positionSide = 'SHORT';
+    if (action === 'openLong') positionSide = bridgeExchangeSection?.includes('FUTURES') && isHedgeMode ? 'LONG' : null;
+    if (action === 'openShort') positionSide = bridgeExchangeSection?.includes('FUTURES') && isHedgeMode ? 'SHORT' : null;
+    
+    const extendedParams = { ...baseParams };
+    if (positionSide) extendedParams.positionSide = positionSide;
+    
+    let command = action;
+    switch(action) {
+        case 'openLong': command = 'marketBuy'; break;
+        case 'openShort': command = 'marketSell'; break;
+        case 'closeLong': command = 'closeMyPosition'; extendedParams.side = 'long'; break;
+        case 'closeShort': command = 'closeMyPosition'; extendedParams.side = 'short'; break;
+        case 'closeAllLong': command = 'closeMyPosition'; extendedParams.side = 'long'; break;
+        case 'closeAllShort': command = 'closeMyPosition'; extendedParams.side = 'short'; break;
+        default: return { success: false, error: 'Unknown action: ' + action };
+    }
+    
+    addLog(`📤 ${command} ${qty} ${symbol}${positionSide ? ' [' + positionSide + ']' : ''}`, 'bridge');
+    
+    try {
+        const result = await sendCommand(command, extendedParams);
+        if (result.success && result.executedQty) {
+            addLog(`✅ Исполнено: ${result.executedQty} ${symbol}`, 'bridge_confirm');
+            return { success: true, data: result.data, executedQty: parseFloat(result.executedQty) };
+        }
+        return result;
+    } catch (err) {
+        addLog(`❌ ${command}: ${err.message}`, 'bridge_error');
+        return { success: false, error: err.message };
+    }
+}
+
+function getMskTime(){return new Date()}
+function formatTimeMsk(){return getMskTime().toLocaleTimeString('ru-RU',{timeZone:'Europe/Moscow',hour12:false})}
+function formatFullTimeMsk(){return getMskTime().toLocaleString('ru-RU',{timeZone:'Europe/Moscow',hour12:false})}
+function addLog(msg,type){type=type||'info';eventLogs.unshift({time:formatTimeMsk(),msg:msg,type:type});if(eventLogs.length>MAX_LOG_ENTRIES)eventLogs.splice(MAX_LOG_ENTRIES,TRADES_CLEANUP_THRESHOLD);updateLogUI()}
+function updateLogUI(){if(!$('eventLog'))return;$('eventLog').innerHTML=eventLogs.map(function(l){var bc='#cbd5e1';if(l.type==='signal')bc='#f59e0b';if(l.type==='trade')bc='#2563eb';if(l.type==='error')bc='#ef4444';if(l.type==='multi')bc='#f59e0b';if(l.type==='tg_sent')bc='#10b981';if(l.type==='tg_error')bc='#ef4444';if(l.type==='trailing')bc='#0891b2';if(l.type==='settings')bc='#8b5cf6';if(l.type==='bridge')bc='#7c3aed';if(l.type==='bridge_confirm')bc='#059669';if(l.type==='bridge_error')bc='#dc2626';return'<div class="log-entry" style="border-left-color:'+bc+'">['+l.time+'] '+l.msg+'</div>'}).join('');if($('logCountBadge'))$('logCountBadge').textContent=eventLogs.length+' / '+MAX_LOG_ENTRIES}
+var eventLogs=[];
+function formatUSD(val){return(val||0).toFixed(2)+' $'}
+function calculateWinRate(){if(totalTradesCount===0)return{winRate:0,lossRate:0};return{winRate:((winTradesCount/totalTradesCount)*100).toFixed(1),lossRate:((lossTradesCount/totalTradesCount)*100).toFixed(1)}}
+function addTrade(trade){tradesHistory.push(trade);if(tradesHistory.length>MAX_TRADES_COUNT)tradesHistory.splice(0,tradesHistory.length-MAX_TRADES_COUNT+TRADES_CLEANUP_THRESHOLD);updateTradesUI()}
+function clearTradesHistory(){tradesHistory=[];lossStreak=[];updateTradesUI()}
+function getValueInUSD(config,baseValue){if(!config||config.value===null||config.value===''||config.value===undefined)return null;if(config.unit==='percent'){if(!baseValue)baseValue=virtualBalance;return baseValue*(parseFloat(config.value)/100)}return parseFloat(config.value)}
+function getBaseRiskAmount(){return getValueInUSD(riskConfig)}
+function getLossStreakSum(){return lossStreak.reduce(function(s,l){return s+l.amount},0)}
+function getTotalOpenSLAmount(sideOnly){var sl=getValueInUSD(slConfig)||0;if(sideOnly)return positions.filter(function(p){return p.side===sideOnly}).length*sl;return positions.length*sl}
+function getPositionsBySide(side){return positions.filter(function(p){return p.side===side})}
+function hasAnyPosition(){return positions.length>0}
+function getPositionRiskDescription(side,size,entryPrice){var slAmt=getValueInUSD(slConfig)||0;var riskAmt=size*entryPrice*(slConfig.unit==='percent'?slConfig.value/100:slConfig.value/entryPrice);var leverageInfo=bridgeCurrentLeverage>1?' | Плечо ×'+bridgeCurrentLeverage:'';var riskStr=slConfig.value?(', Риск: '+(slConfig.unit==='percent'?slConfig.value+'%':'$'+slConfig.value)):'';return leverageInfo+riskStr}
+
+// ============================================================
+//  ИСПРАВЛЕННАЯ ЛОГИКА ЗАКРЫТИЯ ДЛЯ MULTI MODE + BRIDGE
+// ============================================================
+
+function closePositionByIdVirtual(positionId, exitPrice, reason) {
+    const idx = positions.findIndex(p => p.id === positionId); if (idx === -1) return false;
+    const p = positions[idx];
+    const grossPnl = p.side === 'long' ? (exitPrice - p.entryPrice) * p.size * (p.leverage || 1) : (p.entryPrice - exitPrice) * p.size * (p.leverage || 1);
+    const exitFee = Math.abs(p.size) * exitPrice * FEE_RATE;
+    const pnl = grossPnl - (p.fee || 0) - exitFee;
+    const marginToReturn = p.marginUsed || (p.size * p.entryPrice / (p.leverage || 1));
+    virtualBalance += marginToReturn + pnl; netProfitSum += pnl; totalTradesCount++;
+    const isWin = pnl > 0; if (isWin) { winTradesCount++; resetLossStreakIfProfitable(pnl); } else { lossTradesCount++; lossStreak.push({ amount: Math.abs(pnl) }); }
+    addTrade({ time: formatFullTimeMsk(), side: p.side, entryPrice: p.entryPrice, exitPrice, pnl, reason, leverage: p.leverage || 1, riskUSD: p.posRiskUSD || 0 });
+    
+    // 🔥 Отправляем сделку в Командир для статистики
+    try {
+        var confirmChannel = new BroadcastChannel('trading_bot_confirmations');
+        confirmChannel.postMessage({
+            source: 'my_bot_mind',
+            type: 'trade_closed',
+            pnl: pnl,
+            side: p.side,
+            symbol: currentInstrument,
+            timestamp: Date.now()
+        });
+        confirmChannel.close();
+    } catch(e) {}
+    
+    addLog('Закрыта ' + p.side.toUpperCase() + ' | П/У: ' + (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + '$ (' + reason + ') | Плечо ×' + (p.leverage || 1), 'trade');
+    sendTgMessage((isWin ? '✅' : '❌') + ' ЗАКРЫТА ' + p.side.toUpperCase() + '\n' + currentInstrument + ' | ' + selectedTimeframe + '\n🕐 ' + formatTimeMsk() + '\nВход: ' + p.entryPrice.toFixed(2) + '\nВыход: ' + exitPrice.toFixed(2) + '\nП/У: ' + (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + '$ | Плечо ×' + (p.leverage || 1) + '\nПричина: ' + reason + '\nДепозит: ' + virtualBalance.toFixed(2) + '$\nБот v' + BOT_VERSION);
+    positions.splice(idx, 1); recalculateLimits(); if (positions.length > 0) updateTrailingStops(currentPrice); updateUI(); return true;
+}
+
+closePositionById = function(positionId, exitPrice, reason) {
+    const pos = positions.find(p => p.id === positionId);
+    if (!pos) return false;
+
+    addLog('🔒 Закрытие #' + positionId.toString().slice(-4) + ' ' + pos.side + ' ' + pos.size.toFixed(4) + ' | Мост: ' + (bridgeRetranslatorReady ? '✅' : '❌'), 'trade');
+    addLog('🔒 Закрытие ' + pos.side + ' ' + pos.size.toFixed(4) + ' на ' + currentInstrument + ' (биржа: ' + bridgeSymbol + ')', 'trade');
+
+    // 🔥 Отправляем команду закрытия в Командир (нормализация на стороне сервера)
+    if (bridgeRetranslatorReady) {
+        const positionSide = pos.side === 'long' ? 'LONG' : 'SHORT';
+        addLog(`📤 closeMyPosition ${pos.side} qty=${pos.size} (${positionSide})`, 'bridge');
+        sendCommand('closeMyPosition', {
+            symbol: currentInstrument,
+            quantity: String(pos.size),
+            side: pos.side,
+            positionSide: positionSide,
+            virtualDeposit: virtualBalance
+        }).catch(function(err) {
+            addLog(`❌ Ошибка закрытия на бирже: ${err.message}`, 'bridge_error');
+        });
+    } else {
+        addLog('⚠️ Мост неактивен — позиция закрыта только в песочнице', 'bridge');
+    }
+
+    // ПОТОМ удаляем из песочницы
+    const result = closePositionByIdVirtual(positionId, exitPrice, reason);
+    return result;
+};
+
+closeAllPositions = function(exitPrice, reason) {
+    // 🔥 Отправляем команду закрытия каждой позиции в Командир
+    if (bridgeRetranslatorReady) {
+        positions.slice().forEach(function(p) {
+            const positionSide = p.side === 'long' ? 'LONG' : 'SHORT';
+            addLog(`📤 closeMyPosition ${p.side} qty=${p.size} (${positionSide})`, 'bridge');
+            sendCommand('closeMyPosition', {
+                symbol: currentInstrument,
+                quantity: String(p.size),
+                side: p.side,
+                positionSide: positionSide,
+                virtualDeposit: virtualBalance
+            }).catch(function(){});
+        });
+        addLog('📤 Закрытие всех позиций на бирже', 'bridge');
+    }
+
+    // ПОТОМ удаляем из песочницы
+    positions.slice().forEach(function(p) {
+        closePositionByIdVirtual(p.id, exitPrice, reason);
+    });
+    recalculateLimits();
+};
+
+closeOppositePositions = function(keepSide, exitPrice, reason) {
+    var opp = keepSide === 'long' ? 'short' : 'long';
+    // 🔥 Шаг 1: Сохраняем копию
+    var oppPositions = positions.filter(function(p) { return p.side === opp; });
+
+    // 🔥 Шаг 2: Отправляем на биржу каждую позицию через closeMyPosition
+    if (bridgeRetranslatorReady) {
+        oppPositions.forEach(function(p) {
+            const positionSide = p.side === 'long' ? 'LONG' : 'SHORT';
+            addLog(`📤 closeMyPosition ${p.side} qty=${p.size} (${positionSide})`, 'bridge');
+            sendCommand('closeMyPosition', {
+                symbol: currentInstrument,
+                quantity: String(p.size),
+                side: p.side,
+                positionSide: positionSide,
+                virtualDeposit: virtualBalance
+            }).catch(function(){});
+        });
+        addLog('📤 Закрытие противоположных позиций (' + opp + ') на бирже', 'bridge');
+    }
+
+    // 🔥 Шаг 3: Удаляем из песочницы
+    oppPositions.forEach(function(p) { closePositionByIdVirtual(p.id, exitPrice, reason); });
+    recalculateLimits();
+};
+
+// Переопределяем openPosition для учёта плеча в режиме multi
+
+function updateTrailingStops(price){if(positions.length===0||slConfig.value<=0)return;var slPct=slConfig.value/100;positions.forEach(function(p){if(p.side==='long'&&price>p.highestProfitPrice){p.highestProfitPrice=price;var ns=price*(1-slPct);if(ns>p.dynamicStopPrice){p.dynamicStopPrice=ns;addLog('Трейлинг #'+p.id.toString().slice(-4)+': SL '+ns.toFixed(2),'trailing')}}else if(p.side==='short'&&price<p.highestProfitPrice){p.highestProfitPrice=price;var ns=price*(1+slPct);if(ns<p.dynamicStopPrice){p.dynamicStopPrice=ns;addLog('Трейлинг #'+p.id.toString().slice(-4)+': SL '+ns.toFixed(2),'trailing')}}})}
+function checkTrailingStop(){var closed=false;positions.slice().forEach(function(p){if(p.side==='long'&&currentPrice<=p.dynamicStopPrice){closePositionById(p.id,currentPrice,'Trailing SL');closed=true}else if(p.side==='short'&&currentPrice>=p.dynamicStopPrice){closePositionById(p.id,currentPrice,'Trailing SL');closed=true}});return closed}
+function resetLossStreakIfProfitable(pnl){if(pnl>0&&strategyFlags.resetLossSeries&&lossStreak.length>0){lossStreak=[];addLog('Серия убытков сброшена','multi')}}
+
+openPosition = function(side, price, barIndex, isMulti, riskOverride) {
+    isMulti = isMulti || false; riskOverride = riskOverride || null;
+    if (!currentPrice || currentPrice < 100) return false;
+    const maxLeverage = window.symbolMaxLeverage || 125;
+    if (bridgeCurrentLeverage > maxLeverage) { addLog('❌ Плечо ×' + bridgeCurrentLeverage + ' > макс ×' + maxLeverage, 'error'); return false; }
+    let riskAmount = riskOverride !== null ? riskOverride : getBaseRiskAmount();
+    let positionValue = bridgeCurrentLeverage > 1 ? riskAmount * bridgeCurrentLeverage : riskAmount;
+    if (positionValue < 20) positionValue = 20;
+    let size = positionValue / price; if (size < (window.symbolMinQty || 0.001)) size = window.symbolMinQty || 0.001;
+    const notional = size * price, lev = bridgeCurrentLeverage || 1, marginRequired = notional / lev;
+    if (marginRequired > virtualBalance) { addLog('❌ Маржа $' + marginRequired.toFixed(2) + ' > депозит $' + virtualBalance.toFixed(2), 'error'); return false; }
+    const maxLevByBalance = Math.floor(virtualBalance / (notional * 0.01));
+    if (lev > maxLevByBalance && maxLevByBalance > 0) { addLog('❌ Плечо ×' + lev + ' недоступно. Макс: ×' + maxLevByBalance, 'error'); return false; }
+    if (positions.length >= MAX_POSITIONS) { addLog('Лимит позиций', 'error'); return false; }
+    const liqInfo = calculateSandboxLiquidation(price, size, side, lev, virtualBalance, 'ISOLATED');
+    if (liqInfo.error) { addLog('❌ ' + liqInfo.message, 'error'); return false; }
+    const maintenanceMargin = notional * 0.004;
+    const slPrice = side === 'long' ? price * (1 - slConfig.value/100) : price * (1 + slConfig.value/100);
+    const fee = notional * FEE_RATE;
+    const levText = lev > 1 ? ' | Плечо ×' + lev : '';
+    const marginText = lev > 1 ? '\n💰 Номинал: $' + notional.toFixed(2) + '\n💵 Нач.маржа: $' + marginRequired.toFixed(2) + ' (' + liqInfo.initialMarginRate + ')' + '\n🔒 Поддерж.маржа: $' + maintenanceMargin.toFixed(2) + '\n⚠️ Ликв: $' + liqInfo.liqPrice.toFixed(2) + ' (' + liqInfo.distancePercent.toFixed(2) + '%)' + '\n💳 Свободно: $' + liqInfo.freeMargin.toFixed(2) + '\n📊 Комиссия: ~$' + fee.toFixed(2) : '';
+    addLog('ОТКРЫТА ' + side.toUpperCase() + ' | ' + size.toFixed(4) + ' @ ' + price.toFixed(2) + marginText + levText, 'trade');
+    sendTgMessage('ОТКРЫТА ' + side.toUpperCase() + '\n' + currentInstrument + ' | ' + selectedTimeframe + '\n🕐 ' + formatTimeMsk() + '\nРазмер: ' + size.toFixed(4) + '\nЦена: ' + price.toFixed(2) + '\n' + marginText + levText + '\nДепозит: $' + virtualBalance.toFixed(2) + '\nБот v' + BOT_VERSION);
+    virtualBalance -= marginRequired;
+    positions.push({ id: Date.now() + Math.random(), side, entryPrice: price, size, entryBarIndex: barIndex, riskAmount, isMultipled: isMulti, initialStopPrice: slPrice, dynamicStopPrice: slPrice, highestProfitPrice: price, posRiskUSD: size * price * (slConfig.value/100), liqPrice: liqInfo.liqPrice, marginUsed: marginRequired, maintenanceMargin, notional, leverage: lev, fee });
+    recalculateLimits();
+    if (bridgeRetranslatorReady) sendAdaptedOrder(side === 'long' ? 'openLong' : 'openShort', { symbol: currentInstrument, quantity: String(size) }).catch(function(){});
+    updateUI(); return true;
+};
+function checkStopLoss() {
+    if (!positions.length) return false;
+    const slAmt = getValueInUSD(slConfig); if (!slAmt || slAmt <= 0) return false;
+    let closed = false;
+    positions.slice().forEach(p => {
+        const pl = p.side === 'long' ? (currentPrice - p.entryPrice) * p.size * (p.leverage || 1) : (p.entryPrice - currentPrice) * p.size * (p.leverage || 1);
+        if (pl <= -slAmt) { addLog('🛑 SL! P&L: $' + pl.toFixed(2), 'trade'); closePositionById(p.id, currentPrice, 'SL'); closed = true; }
+    });
+    return closed;
+}
+
+function checkTakeProfit() {
+    if (!positions.length) return false;
+    const tpAmt = getValueInUSD(tpConfig); if (!tpAmt || tpAmt <= 0) return false;
+    let closed = false;
+    positions.slice().forEach(p => {
+        const pl = p.side === 'long' ? (currentPrice - p.entryPrice) * p.size * (p.leverage || 1) : (p.entryPrice - currentPrice) * p.size * (p.leverage || 1);
+        if (pl >= tpAmt) { addLog('🎯 TP! P&L: $' + pl.toFixed(2), 'trade'); closePositionById(p.id, currentPrice, 'TP'); closed = true; }
+    });
+    return closed;
+}
+
+function checkExitConditions() {
+    if (!positions.length) return;
+    updateTrailingStops(currentPrice); checkLiquidationAfterBalanceChange(); checkTrailingStop(); checkStopLoss(); checkTakeProfit();
+    if (holdBarsCount !== null) positions.slice().forEach(p => { if (p.entryBarIndex !== undefined && realTimeBars.length - 1 - p.entryBarIndex >= holdBarsCount) closePositionById(p.id, currentPrice, 'Таймер (' + holdBarsCount + ' бар)'); });
+}
+
+function detectFractalSignalRaw(){var L=fractalPeriod,B=noCandleCheck?0:userBackstep,len=realTimeBars.length;if(len<(L*2+1)+B)return null;var centerIdx=len-L-1-B;if(centerIdx<L||centerIdx>=len-L)return null;var center=realTimeBars[centerIdx],isHighFractal=true,isLowFractal=true;for(var i=centerIdx-L;i<=centerIdx+L;i++){if(i===centerIdx||i<0||i>=len)continue;if(realTimeBars[i].high>=center.high)isHighFractal=false;if(realTimeBars[i].low<=center.low)isLowFractal=false}var rawSignal=null;if(!noCandleCheck){if(isLowFractal&&center.close>center.low)rawSignal='long';else if(isHighFractal&&center.close<center.high)rawSignal='short'}else{if(isLowFractal)rawSignal='long';else if(isHighFractal)rawSignal='short'}if(!rawSignal)return null;return{type:rawSignal,priceLevel:rawSignal==='long'?center.low:center.high,barIndex:centerIdx}}
+
+function sendTgMessage(text,attempt){attempt=attempt||0;if(!notificationsConfig.telegram.enabled||!notificationsConfig.telegram.botToken||!notificationsConfig.telegram.chatId)return;tgPendingQueue.push({text:text,attempt:attempt,timestamp:Date.now()});if(!tgProcessing)processTgQueue()}
+async function processTgQueue(){if(tgPendingQueue.length===0){tgProcessing=false;return}tgProcessing=true;var now=Date.now();tgPendingQueue=tgPendingQueue.filter(function(i){return now-i.timestamp<60000});if(tgPendingQueue.length===0){tgProcessing=false;return}var item=tgPendingQueue.shift();var maxRetries=notificationsConfig.telegram.retries||2;var timeout=(notificationsConfig.telegram.timeout||15)*1000;var fullText=item.attempt>0?'Повтор #'+(item.attempt+1)+'\n'+item.text:item.text;try{var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},timeout);var resp=await fetch('https://api.telegram.org/bot'+notificationsConfig.telegram.botToken+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:notificationsConfig.telegram.chatId,text:fullText,parse_mode:'HTML'}),signal:controller.signal});clearTimeout(timer);var result=await resp.json();if(result.ok){addLog('Telegram: доставлено','tg_sent')}else{throw new Error(result.description||'HTTP '+resp.status)}}catch(err){addLog('Telegram: '+err.message,'tg_error');if(item.attempt<maxRetries){await new Promise(function(r){setTimeout(r,3000)});tgPendingQueue.unshift({text:item.text,attempt:item.attempt+1,timestamp:Date.now()})}else{addLog('Telegram: превышено повторов','error')}}finally{if(tgPendingQueue.length>0)setTimeout(function(){processTgQueue()},1500);else{tgProcessing=false}}}
+
+function handleSignal(signal,barIndex){var rawType=signal.type;var tradeDirection=invertSignal?(rawType==='long'?'short':'long'):rawType;var signalText=rawType==='long'?'LONG':'SHORT';var invText=invertSignal?' [ИНВЕРСИЯ]':'';var ncText=noCandleCheck?' [БЕЗ СВЕЧИ]':'';var bsText=' [BS='+(noCandleCheck?0:userBackstep)+']';var leverageInfo=bridgeCurrentLeverage>1?' | Плечо ×'+bridgeCurrentLeverage:'';addLog('СИГНАЛ: '+signalText+invText+ncText+bsText+' | Уровень: '+signal.priceLevel.toFixed(2)+leverageInfo,'signal');if($('signalLabel')){$('signalLabel').className='signal-badge '+(rawType==='long'?'signal-long':'signal-short');$('signalLabel').innerHTML=rawType==='long'?'🟢 LONG':'🔴 SHORT'}sendTgMessage('СИГНАЛ: '+signalText+invText+ncText+bsText+leverageInfo+'\n'+currentInstrument+' | '+selectedTimeframe+'\n🕐 '+formatTimeMsk()+'\nУровень: '+signal.priceLevel.toFixed(2)+'\nЦена: '+currentPrice.toFixed(2)+'\nСекция: '+bridgeExchangeSection+'\nБот v'+BOT_VERSION);if(!botActive)return;if(multiModeConfig.mode==='off'){if(!hasAnyPosition())openPosition(tradeDirection,currentPrice,barIndex,false)}else if(multiModeConfig.mode==='add'){var opp=tradeDirection==='long'?'short':'long';var same=getPositionsBySide(tradeDirection);var oppP=getPositionsBySide(opp);if(!hasAnyPosition()){openPosition(tradeDirection,currentPrice,barIndex,false)}else if(same.length>0){var slAmt=strategyFlags.sameSideRisk?getTotalOpenSLAmount(tradeDirection):getTotalOpenSLAmount();openPosition(tradeDirection,currentPrice,barIndex,true,getBaseRiskAmount()+slAmt*multiModeConfig.multiplier)}else if(oppP.length>0){openPosition(tradeDirection,currentPrice,barIndex,true,getBaseRiskAmount()+getLossStreakSum()*multiModeConfig.multiplier)}}else if(multiModeConfig.mode==='exclude'){var opp=tradeDirection==='long'?'short':'long';var oppP=getPositionsBySide(opp);if(!hasAnyPosition()){var ls=getLossStreakSum();openPosition(tradeDirection,currentPrice,barIndex,false,ls>0?getBaseRiskAmount()+ls*multiModeConfig.multiplier:null)}else if(oppP.length>0){if(strategyFlags.excludeOnlyOpposite){closeOppositePositions(tradeDirection,currentPrice,'Исключение (противоп.)')}else{closeAllPositions(currentPrice,'Исключение')}openPosition(tradeDirection,currentPrice,barIndex,true,getBaseRiskAmount()+getLossStreakSum()*multiModeConfig.multiplier)}else{addLog('Мульти-исключение: сонаправленный, ждем','multi')}}}
+
+function processStrategyOnNewBar(barIndex,barCloseTime){if(lastProcessedCandleTime===barCloseTime)return;lastProcessedCandleTime=barCloseTime;var signal=detectFractalSignalRaw();if(signal&&lastSignalBarIndex!==signal.barIndex){lastSignalBarIndex=signal.barIndex;handleSignal(signal,barIndex)}else if(!signal&&$('signalLabel')){$('signalLabel').className='signal-badge signal-wait';$('signalLabel').innerHTML='⚪ НЕТ СИГНАЛА'}checkExitConditions();updateUI()}
+function getBinanceSymbol(instrument){return instrument.replace('/','').toUpperCase()}
+
+function startAutoPulse(){stopAutoPulse();autoPulseTimer=setInterval(function(){if(!wsConnected&&!bridgeRetranslatorReady)return;var elapsed=Date.now()-lastBarAddedTime;if(lastBarAddedTime>0&&elapsed>120000){addLog('Пульс: бот жив, '+Math.round(elapsed/1000)+'с без новых свечей','pulse')}},120000);forceAnalysisTimer=setInterval(function(){if(!wsConnected&&!bridgeRetranslatorReady)return;if(realTimeBars.length<(fractalPeriod*2+1))return;var elapsed=Date.now()-lastBarAddedTime;var tfMap={'1m':1,'5m':5,'15m':15,'1h':60,'4h':240,'1d':1440};var tfMin=tfMap[selectedTimeframe]||1;if(lastBarAddedTime>0&&elapsed>tfMin*60000){addLog('Принудительный анализ ('+Math.round(elapsed/1000)+'с без свечей)','pulse');lastProcessedCandleTime=null;var lastBar=realTimeBars[realTimeBars.length-1];if(lastBar&&lastBar.timestamp){processStrategyOnNewBar(realTimeBars.length-1,lastBar.timestamp)}}if(positions.length>0){checkExitConditions();updateUI()}},180000)}
+function stopAutoPulse(){if(autoPulseTimer){clearInterval(autoPulseTimer);autoPulseTimer=null}if(forceAnalysisTimer){clearInterval(forceAnalysisTimer);forceAnalysisTimer=null}}
+
+function subscribeToTimeframe(tf,symbol){var sn=symbol.toLowerCase()+'@kline_'+tf;if(wsReconnectTimer){clearTimeout(wsReconnectTimer);wsReconnectTimer=null}if(ws){try{ws.onopen=null;ws.onclose=null;ws.onerror=null;ws.onmessage=null;ws.close()}catch(e){}ws=null}ws=new WebSocket('wss://stream.binance.com:9443/ws/'+sn);ws.onopen=function(){wsConnected=true;if($('wsStatusBadge')){$('wsStatusBadge').innerHTML='WS: ✅ '+symbol;$('wsStatusBadge').className='connection-chip live'}if($('priceSourceBadge')&&priceSource==='ws'){$('priceSourceBadge').innerHTML='Цена: WS';$('priceSourceBadge').className='connection-chip live'}addLog('Подключен WS: '+symbol+' '+tf)};ws.onerror=function(){wsConnected=false;if($('wsStatusBadge')){$('wsStatusBadge').innerHTML='WS: ❌';$('wsStatusBadge').className='connection-chip offline'}};ws.onclose=function(){wsConnected=false;if($('wsStatusBadge')){$('wsStatusBadge').innerHTML='WS: 🔄';$('wsStatusBadge').className='connection-chip waiting'}wsReconnectTimer=setTimeout(function(){subscribeToTimeframe(tf,symbol)},5000)};ws.onmessage=function(event){try{var data=JSON.parse(event.data);var kline=data.k;if(!kline)return;currentPrice=parseFloat(kline.c);if($('currentPriceVal'))$('currentPriceVal').innerText=currentPrice.toFixed(2);priceSource='ws';if($('priceSourceBadge')){$('priceSourceBadge').innerHTML='Цена: WS';$('priceSourceBadge').className='connection-chip live'}if(kline.x){lastBarAddedTime=Date.now();var newBar={open:parseFloat(kline.o),high:parseFloat(kline.h),low:parseFloat(kline.l),close:currentPrice,timestamp:kline.T,index:realTimeBars.length};realTimeBars.push(newBar);if(realTimeBars.length>MAX_BARS_COUNT)realTimeBars.splice(0,TRADES_CLEANUP_THRESHOLD);processStrategyOnNewBar(realTimeBars.length-1,kline.T)}if(positions.length>0){checkLiquidationAfterBalanceChange();checkExitConditions()}updateUI()}catch(e){}};startAutoPulse()}
+
+function changeInstrument(symbol){var ns=symbol.toUpperCase().replace('BINANCE:','').replace('/','');if(ns===currentInstrument&&wsConnected)return;stopAutoPulse();if(positions.length>0)closeAllPositions(currentPrice||0,'Смена');currentInstrument=ns;if($('instrumentDisplay'))$('instrumentDisplay').textContent=ns.replace('USDT','/USDT');$('instrumentInput').value=ns;lastProcessedCandleTime=null;lossStreak=[];subscribeToTimeframe(selectedTimeframe,ns);updateUI()}
+
+function changeTimeframe(tf){selectedTimeframe=tf;if($('currentTFDisplay'))$('currentTFDisplay').innerText=tf;stopAutoPulse();realTimeBars=[];lastProcessedCandleTime=null;seedInitialBars();subscribeToTimeframe(tf,currentInstrument);if($('timeframeSelect'))$('timeframeSelect').value=tf}
+
+function loadTradingView(){var c=$('tvWidgetContainer');if(c)c.innerHTML='';var s=document.createElement('script');s.src='https://s3.tradingview.com/tv.js';s.onload=function(){tvWidgetInstance=new TradingView.widget({width:'100%',height:520,symbol:'BINANCE:ETHUSDT',interval:'1',timezone:'Europe/Moscow',theme:'light',style:'1',locale:'ru',container_id:'tvWidgetContainer',studies:['Volume@tv-basicstudies'],toolbar_bg:'#f1f5f9',enable_publishing:false,hide_side_toolbar:false,allow_symbol_change:true,save_image:false,details:true,hotlist:true,calendar:false,withdateranges:true,autosize:true});setTimeout(function(){tvWidgetReady=true;if(tvWidgetInstance&&tvWidgetInstance.chart)tvWidgetInstance.chart().onSymbolChanged(function(){var sym=tvWidgetInstance.chart().symbol();if(sym){var cs=sym.replace('BINANCE:','').replace('/','');if(cs!==currentInstrument)changeInstrument(cs)}})},3000)};document.head.appendChild(s)}
+function loadSettingsFromUI(log){log=log!==false;riskConfig.value=parseFloat($('riskValue')?.value||1);riskConfig.unit=$('riskUnit')?.value||'percent';var tv=$('tpValue')?.value;tpConfig.value=tv===''?null:parseFloat(tv);tpConfig.unit=$('tpUnit')?.value||'percent';var sv=$('slValue')?.value;slConfig.value=sv===''?null:parseFloat(sv);slConfig.unit=$('slUnit')?.value||'percent';var hv=$('holdBars')?.value;holdBarsCount=hv?parseInt(hv):null;fractalPeriod=parseInt($('fractalPeriod')?.value||2);userBackstep=parseInt($('backstepSlider')?.value||2);invertSignal=$('invertSignal')?.value==='true';noCandleCheck=$('noCandleCheck')?.checked||false;multiModeConfig.mode=$('multiModeSelect')?.value||'off';multiModeConfig.multiplier=parseFloat($('multiplierValue')?.value||1);strategyFlags.sameSideRisk=$('checkboxSameRisk')?.checked||false;strategyFlags.resetLossSeries=$('checkboxResetSeries')?.checked||false;strategyFlags.excludeOnlyOpposite=$('checkboxExcludeOnly')?.checked||false;notificationsConfig.telegram.enabled=$('tgEnabled')?.checked||false;notificationsConfig.telegram.botToken=$('tgBotToken')?.value||'';notificationsConfig.telegram.chatId=$('tgChatId')?.value||'';notificationsConfig.telegram.timeout=parseInt($('tgTimeout')?.value||15);notificationsConfig.telegram.retries=parseInt($('tgRetries')?.value||2);notificationsConfig.telegram.signalNotify=$('tgSignalNotify')?.value||'all';syncBalanceOnStart=$('syncBalanceCheck')?.checked||false;if(log)addLog('Настройки: риск '+riskConfig.value+riskConfig.unit+', TP '+(tpConfig.value||'—')+tpConfig.unit+', SL '+(slConfig.value||'—')+slConfig.unit+', таймер '+(holdBarsCount||'не уст.')+'б, L='+fractalPeriod+', backstep='+userBackstep+', инверсия='+(invertSignal?'ДА':'НЕТ')+', без свечи='+(noCandleCheck?'ДА':'НЕТ')+', мульти='+multiModeConfig.mode+', множитель='+multiModeConfig.multiplier,'settings')}
+function seedInitialBars(){var now=Date.now();for(var i=0;i<20;i++){var open,high,low,close;if(i<15){open=3300-i*10;high=3310-i*9;low=3280-i*10;close=3290-i*9}else if(i===15){open=3200;high=3210;low=3180;close=3190}else if(i===16){open=3190;high=3200;low=3175;close=3185}else if(i===17){open=3170;high=3180;low=3150;close=3165}else if(i===18){open=3180;high=3200;low=3160;close=3190}else{open=3200;high=3220;low=3185;close=3210}realTimeBars.push({open:open,high:high,low:low,close:close,timestamp:now-(20-i)*60000,index:i})}currentPrice=realTimeBars[realTimeBars.length-1].close}
+function setDeposit(){var v=parseFloat($('depositInput')?.value);if(isNaN(v)||v<=0)v=10000;virtualBalance=v;recalculateLimits();updateUI()}
+function resetAccount(){if(positions.length>0)closeAllPositions(currentPrice,'Сброс');virtualBalance=parseFloat($('depositInput')?.value)||10000;netProfitSum=0;totalTradesCount=0;winTradesCount=0;lossTradesCount=0;clearTradesHistory();positions=[];lossStreak=[];recalculateLimits();updateUI()}
+function updateBotStatusIndicator(){if($('botStatusDot')&&$('botStatusText')){if(botActive){$('botStatusDot').className='status-dot active';$('botStatusText').textContent='Бот работает'}else{$('botStatusDot').className='status-dot';$('botStatusText').textContent='Ожидание'}}}
+
+function startBot(){if(botActive)return;botActive=true;if($('botModeIndicator'))$('botModeIndicator').innerHTML='🤖 АВТО-СДЕЛКИ';if($('signalLabel')){$('signalLabel').className='signal-badge signal-wait';$('signalLabel').innerHTML='⚪ Ожидание'}updateBotStatusIndicator();var leverageInfo=bridgeCurrentLeverage>1?' | Плечо ×'+bridgeCurrentLeverage:'';addLog('БОТ ЗАПУЩЕН'+leverageInfo,'trade');sendTgMessage('БОТ ЗАПУЩЕН\n'+currentInstrument+' | '+selectedTimeframe+'\n🕐 '+formatTimeMsk()+'\nДепозит: '+virtualBalance.toFixed(2)+'$\nРиск: '+riskConfig.value+riskConfig.unit+'\nTP: '+(tpConfig.value||'—')+tpConfig.unit+' | SL: '+(slConfig.value||'—')+slConfig.unit+'\nBackstep: '+userBackstep+' | Без свечи: '+(noCandleCheck?'Да':'Нет')+leverageInfo+'\nСекция: '+bridgeExchangeSection+' | '+bridgeExchangeMode+'\nБот v'+BOT_VERSION);updateUI()}
+
+function stopBot(){if(!botActive)return;botActive=false;if($('botModeIndicator'))$('botModeIndicator').innerHTML='⚙️ СИГНАЛЫ (бот выкл)';if($('signalLabel')){$('signalLabel').className='signal-badge signal-wait';$('signalLabel').innerHTML='⚪ Остановлен'}updateBotStatusIndicator();if(positions.length>0)closeAllPositions(currentPrice,'Остановка');sendTgMessage('БОТ ОСТАНОВЛЕН\n'+currentInstrument+' | '+selectedTimeframe+'\n🕐 '+formatTimeMsk()+'\nДепозит: '+virtualBalance.toFixed(2)+'$\nЧистый P&L: '+(netProfitSum>=0?'+':'')+netProfitSum.toFixed(2)+'$\nСделок: '+totalTradesCount+'\nСекция: '+bridgeExchangeSection+'\nБот v'+BOT_VERSION);updateUI()}
+
+function updatePositionsUI(){
+    if(!$('positionsPanel')||!$('positionsList'))return;
+    if(positions.length===0){
+        $('positionsPanel').style.display='none';
+        return;
+    }
+    $('positionsPanel').style.display='block';
+    var totalUnrealized=positions.reduce(function(sum,pos){
+        var pnl=pos.side==='long'?(currentPrice-pos.entryPrice)*pos.size*(pos.leverage||1):(pos.entryPrice-currentPrice)*pos.size*(pos.leverage||1);
+        return sum+pnl;
+    },0);
+
+    $('positionsList').innerHTML=positions.map(function(pos,idx){
+        var pnl=pos.side==='long'?(currentPrice-pos.entryPrice)*pos.size*(pos.leverage||1):(pos.entryPrice-currentPrice)*pos.size*(pos.leverage||1);
+        var pnlClass=pnl>=0?'positive':'negative';
+        var multMark=pos.isMultipled?' ×'+multiModeConfig.multiplier:'';
+        
+        var liqInfo='';
+        if(pos.leverage&&pos.leverage>1){
+            liqInfo=' | Плечо ×'+pos.leverage;
+            if(pos.marginUsed)liqInfo+=' | Нач.маржа $'+pos.marginUsed.toFixed(2);
+            if(pos.maintenanceMargin)liqInfo+=' | Поддерж. $'+pos.maintenanceMargin.toFixed(2);
+            if(pos.liqPrice)liqInfo+=' | Liq $'+pos.liqPrice.toFixed(2);
+        }
+        
+        var slInfo=pos.dynamicStopPrice?' | SL: '+pos.dynamicStopPrice.toFixed(2):'';
+        var riskInfo=pos.posRiskUSD?' | Риск: $'+pos.posRiskUSD.toFixed(2):'';
+        
+        return '<div class="position-item"><span>#'+(idx+1)+' '+pos.side.toUpperCase()+' '+pos.size.toFixed(4)+' @ '+pos.entryPrice.toFixed(2)+multMark+slInfo+liqInfo+riskInfo+'</span><span class="'+pnlClass+'">'+(pnl>=0?'+':'')+pnl.toFixed(2)+'$</span></div>';
+    }).join('')+
+    '<div class="position-item" style="font-weight:600;border-top:2px solid #7dd3fc;margin-top:8px;padding-top:8px"><span>Σ P&L (с плечом):</span><span class="'+(totalUnrealized>=0?'positive':'negative')+'">'+(totalUnrealized>=0?'+':'')+totalUnrealized.toFixed(2)+'$</span></div>';
+}
+
+function updateUI(){if($('virtualBalanceDisplay'))$('virtualBalanceDisplay').innerText=formatUSD(virtualBalance);if($('totalTrades'))$('totalTrades').innerText=totalTradesCount;var rates=calculateWinRate();if($('winTrades'))$('winTrades').innerText=winTradesCount+' ('+rates.winRate+'%)';if($('lossTrades'))$('lossTrades').innerText=lossTradesCount+' ('+rates.lossRate+'%)';if($('netProfit'))$('netProfit').innerText=netProfitSum>=0?'+'+formatUSD(netProfitSum):formatUSD(netProfitSum);if(positions.length===0){if($('positionStatus'))$('positionStatus').innerText='Нет';if($('unrealizedPL'))$('unrealizedPL').innerText=formatUSD(0)}else{var lc=positions.filter(function(p){return p.side==='long'}).length;var sc=positions.filter(function(p){return p.side==='short'}).length;var ts=positions.reduce(function(s,p){return s+p.size},0);if($('positionStatus'))$('positionStatus').innerText=lc+'L/'+sc+'S ('+ts.toFixed(4)+')';var upl=positions.reduce(function(s,p){return s+(p.side==='long'?(currentPrice-p.entryPrice)*p.size*(p.leverage||1):(p.entryPrice-currentPrice)*p.size*(p.leverage||1))},0);if($('unrealizedPL'))$('unrealizedPL').innerText=(upl>=0?'+':'')+formatUSD(upl)}updatePositionsUI();updateTradesUI();updateBotStatusIndicator();updateBridgeStatusUI();if($('heartbeatBadge')){var el=lastBarAddedTime>0?Math.round((Date.now()-lastBarAddedTime)/1000):'-';$('heartbeatBadge').textContent='пульс: '+el+'с'}if($('currentPriceVal'))$('currentPriceVal').innerText=currentPrice.toFixed(2);if($('currentLeverageVal')){var maxLev=window.symbolMaxLeverage||'—';$('currentLeverageVal').innerText='×'+bridgeCurrentLeverage+' (макс ×'+maxLev+')'}}
+
+function updateBridgeStatusUI(){if($('bridgeStatusChip')){if(bridgeRetranslatorReady){$('bridgeStatusChip').innerHTML='🔄 Мост: активен';$('bridgeStatusChip').className='connection-chip live'}else{$('bridgeStatusChip').innerHTML='⏳ Мост: ожидание';$('bridgeStatusChip').className='connection-chip waiting'}}if($('bridgeStatusBadge')){if(bridgeRetranslatorReady){$('bridgeStatusBadge').innerHTML='Мост: ✅';$('bridgeStatusBadge').className='connection-chip live'}else{$('bridgeStatusBadge').innerHTML='Мост: ⏳';$('bridgeStatusBadge').className='connection-chip waiting'}}if($('exchangeSectionBadge')){$('exchangeSectionBadge').innerHTML=bridgeExchangeSection||'—';if(bridgeExchangeSection.includes('FUTURES'))$('exchangeSectionBadge').className='exchange-section-badge section-futures';else if(bridgeExchangeSection.includes('SPOT'))$('exchangeSectionBadge').className='exchange-section-badge section-spot';else $('exchangeSectionBadge').className='exchange-section-badge section-demo'}if($('exchangeModeBadge')){$('exchangeModeBadge').innerHTML=bridgeExchangeMode||'—';if(bridgeExchangeMode.includes('REAL')||bridgeExchangeMode.includes('Production'))$('exchangeModeBadge').className='exchange-section-badge section-real';else $('exchangeModeBadge').className='exchange-section-badge section-demo'}if($('bridgeSymbolBadge')&&$('bridgeSymbolDisplay')){if(bridgeSymbol){$('bridgeSymbolBadge').style.display='inline-block';$('bridgeSymbolDisplay').innerHTML=bridgeSymbol;if(bridgeSymbol!==currentInstrument){$('bridgeSymbolBadge').className='exchange-section-badge section-real';if($('bridgeSyncWarning'))$('bridgeSyncWarning').style.display='inline';}else{$('bridgeSymbolBadge').className='exchange-section-badge section-spot';if($('bridgeSyncWarning'))$('bridgeSyncWarning').style.display='none';}}else{$('bridgeSymbolBadge').style.display='none';if($('bridgeSyncWarning'))$('bridgeSyncWarning').style.display='none';}}if($('bridgeLeverageBadge')){if(bridgeCurrentLeverage>1){$('bridgeLeverageBadge').style.display='inline-block';$('bridgeLeverageBadge').innerHTML='Плечо ×'+bridgeCurrentLeverage}else{$('bridgeLeverageBadge').style.display='none'}}if($('bridgeLeverageDisplay')){if(bridgeCurrentLeverage>1){$('bridgeLeverageDisplay').style.display='inline'}else{$('bridgeLeverageDisplay').style.display='none'}}if($('connectionStatus')){$('connectionStatus').innerHTML=bridgeRetranslatorReady?'🌉 Мост Live':'🔴 Мост Offline';$('connectionStatus').style.background=bridgeRetranslatorReady?'#d1fae5':'#fee2e2'}}
+
+function updateTradesUI(){if(!$('tradesTableBody'))return;$('tradesTableBody').innerHTML=tradesHistory.length===0?'<tr><td colspan="7">Нет сделок</td></tr>':tradesHistory.slice().reverse().slice(0,50).map(function(t){return'<tr><td>'+t.time+'</td><td>'+t.side.toUpperCase()+'</td><td>'+t.entryPrice.toFixed(2)+'</td><td>'+(t.exitPrice?.toFixed(2)||'-')+'</td><td style="color:'+(t.pnl>=0?'#10b981':'#ef4444')+'">'+(t.pnl>=0?'+':'')+t.pnl.toFixed(2)+'$</td><td>'+(t.riskUSD?'$'+t.riskUSD.toFixed(2):'—')+'</td><td>'+(t.reason||'-')+'</td></tr>'}).join('');if($('tradesCountBadge'))$('tradesCountBadge').textContent=tradesHistory.length+' / '+MAX_TRADES_COUNT}
+function initHeightControl(){var sl=$('chartHeightSlider'),hs=$('heightValue'),tc=$('tvWidgetContainer');if(sl)sl.addEventListener('input',function(e){if(hs)hs.innerText=e.target.value+'px';if(tc)tc.style.height=e.target.value+'px'})}
+function updateFlagStyles(){['SameRisk','ResetSeries','ExcludeOnly'].forEach(function(k){var flag=$('flag'+k);var checked=$('checkbox'+k)?.checked;if(flag)flag.className='strategy-flag'+(checked?' checked':'')})}
+async function testTelegramNotification(){var bt=$('tgBotToken')?.value,ci=$('tgChatId')?.value;if(!bt||!ci){addLog('Заполните Token и Chat ID','error');return}try{var c=new AbortController();var t=setTimeout(function(){c.abort()},10000);var r=await fetch('https://api.telegram.org/bot'+bt+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:ci,text:'ТЕСТ '+currentInstrument+' | '+selectedTimeframe+'\n🕐 '+formatFullTimeMsk()+'\nСекция: '+bridgeExchangeSection+'\nБот v'+BOT_VERSION}),signal:c.signal});clearTimeout(t);var j=await r.json();if(j.ok)addLog('Telegram тест успешен','tg_sent');else addLog(j.description,'tg_error')}catch(err){addLog(err.message,'tg_error')}}
+function saveProfile(){var p={name:'profile_'+Date.now(),timestamp:new Date().toISOString(),instrument:currentInstrument,timeframe:selectedTimeframe,settings:{risk:riskConfig,tp:tpConfig,sl:slConfig,holdBars:holdBarsCount,fractalPeriod:fractalPeriod,userBackstep:userBackstep,invertSignal:invertSignal,noCandleCheck:noCandleCheck,multiMode:multiModeConfig,strategyFlags:strategyFlags,notifications:notificationsConfig},state:{virtualBalance:virtualBalance,totalTradesCount:totalTradesCount,winTradesCount:winTradesCount,lossTradesCount:lossTradesCount,netProfitSum:netProfitSum,tradesHistory:tradesHistory,positions:positions,lossStreak:lossStreak}};var b=new Blob([JSON.stringify(p,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='profile.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);addLog('Профиль сохранен','info')}
+function loadProfile(file){var r=new FileReader();r.onload=function(e){try{var p=JSON.parse(e.target.result);if(p.settings){riskConfig=p.settings.risk||riskConfig;tpConfig=p.settings.tp||tpConfig;slConfig=p.settings.sl||slConfig;holdBarsCount=p.settings.holdBars;fractalPeriod=p.settings.fractalPeriod||2;userBackstep=p.settings.userBackstep||2;invertSignal=p.settings.invertSignal||false;noCandleCheck=p.settings.noCandleCheck||false;if(p.settings.multiMode)multiModeConfig=p.settings.multiMode;if(p.settings.strategyFlags)strategyFlags=p.settings.strategyFlags;if(p.settings.notifications)notificationsConfig=p.settings.notifications}if(p.state){virtualBalance=p.state.virtualBalance||10000;totalTradesCount=p.state.totalTradesCount||0;winTradesCount=p.state.winTradesCount||0;lossTradesCount=p.state.lossTradesCount||0;netProfitSum=p.state.netProfitSum||0;tradesHistory=p.state.tradesHistory||[];lossStreak=p.state.lossStreak||[]}if(p.instrument)changeInstrument(p.instrument);if(p.timeframe){selectedTimeframe=p.timeframe;$('timeframeSelect').value=selectedTimeframe;if($('currentTFDisplay'))$('currentTFDisplay').innerText=selectedTimeframe}$('riskValue').value=riskConfig.value;$('riskUnit').value=riskConfig.unit;$('tpValue').value=tpConfig.value!==null?tpConfig.value:'';$('tpUnit').value=tpConfig.unit;$('slValue').value=slConfig.value!==null?slConfig.value:'';$('slUnit').value=slConfig.unit;$('holdBars').value=holdBarsCount||'';$('fractalPeriod').value=fractalPeriod;$('backstepSlider').value=userBackstep;$('invertSignal').value=invertSignal.toString();$('noCandleCheck').checked=noCandleCheck;$('multiModeSelect').value=multiModeConfig.mode;$('multiplierValue').value=multiModeConfig.multiplier;$('checkboxSameRisk').checked=strategyFlags.sameSideRisk;$('checkboxResetSeries').checked=strategyFlags.resetLossSeries;$('checkboxExcludeOnly').checked=strategyFlags.excludeOnlyOpposite;$('tgBotToken').value=notificationsConfig.telegram.botToken;$('tgChatId').value=notificationsConfig.telegram.chatId;$('tgEnabled').checked=notificationsConfig.telegram.enabled;$('tgTimeout').value=notificationsConfig.telegram.timeout||15;$('tgRetries').value=notificationsConfig.telegram.retries||2;$('tgSignalNotify').value=notificationsConfig.telegram.signalNotify||'all';updateFlagStyles();updateUI()}catch(err){addLog('Ошибка профиля: '+err.message,'error')}};r.readAsText(file)}
+
+// ========== ОБРАБОТЧИКИ ==========
+$('startBotBtn')?.addEventListener('click',startBot);
+$('stopBotBtn')?.addEventListener('click',stopBot);
+$('resetAccountBtn')?.addEventListener('click',resetAccount);
+$('clearLogBtn')?.addEventListener('click',function(){eventLogs=[];updateLogUI()});
+$('setDepositBtn')?.addEventListener('click',setDeposit);
+$('changeInstrumentBtn')?.addEventListener('click',function(){var s=$('instrumentInput')?.value;if(s)changeInstrument(s)});
+$('instrumentInput')?.addEventListener('keypress',function(e){if(e.key==='Enter'){var s=e.target.value;if(s)changeInstrument(s)}});
+$('saveProfileBtn')?.addEventListener('click',saveProfile);
+$('loadProfileBtn')?.addEventListener('click',function(){$('profileFileInput')?.click()});
+$('profileFileInput')?.addEventListener('change',function(e){if(e.target.files?.[0])loadProfile(e.target.files[0]);e.target.value=''});
+$('testTgBtn')?.addEventListener('click',testTelegramNotification);
+$('backstepSlider')?.addEventListener('input',function(){userBackstep=parseInt(this.value);$('backstepValue').textContent=userBackstep;var s='';if(userBackstep===0)s='Мгновенный анализ';else if(userBackstep<=2)s=userBackstep+' бара подтверждения';else s=userBackstep+' баров подтверждения';$('backstepStatus').textContent=s});
+$('backstepSlider')?.addEventListener('change',function(){userBackstep=parseInt(this.value);$('backstepValue').textContent=userBackstep;var s='';if(userBackstep===0)s='Мгновенный анализ';else if(userBackstep<=2)s=userBackstep+' бара подтверждения';else s=userBackstep+' баров подтверждения';$('backstepStatus').textContent=s;addLog('Backstep='+userBackstep,'settings')});
+$('noCandleCheck')?.addEventListener('change',function(){noCandleCheck=this.checked;addLog('Без свечи: '+(noCandleCheck?'ДА':'НЕТ'),'settings')});
+$('checkboxSameRisk')?.addEventListener('change',function(){strategyFlags.sameSideRisk=this.checked;updateFlagStyles()});
+$('checkboxResetSeries')?.addEventListener('change',function(){strategyFlags.resetLossSeries=this.checked;updateFlagStyles();if(this.checked)lossStreak=[]});
+$('checkboxExcludeOnly')?.addEventListener('change',function(){strategyFlags.excludeOnlyOpposite=this.checked;updateFlagStyles()});
+['riskValue','riskUnit','tpValue','tpUnit','slValue','slUnit','holdBars','fractalPeriod','invertSignal','multiModeSelect','multiplierValue','tgBotToken','tgChatId','tgEnabled','tgTimeout','tgRetries','tgSignalNotify','syncBalanceCheck'].forEach(function(id){var el=$(id);if(el)el.addEventListener('change',function(){loadSettingsFromUI()})});
+$('timeframeSelect')?.addEventListener('change',function(e){selectedTimeframe=e.target.value;changeTimeframe(selectedTimeframe);loadSettingsFromUI()});
+$('depositInput')?.addEventListener('change',setDeposit);
+
+// ============================================================
+//  ДВУСТОРОННИЙ BRIDGE К my-bot.html (v2.0)
+//  Каналы: trading_bot_commands → отправка
+//          trading_bot_confirmations ← приём подтверждений
+//          trading_bot_prices ← приём цен
+// ============================================================
+const CMD_CHANNEL = 'trading_bot_commands';
+const PRICE_CHANNEL = 'trading_bot_prices';
+const CONFIRM_CHANNEL = 'trading_bot_confirmations';
+
+let cmdChannel, priceChannel, confirmChannel;
+let pendingCommands = new Map();
+let commandIdCounter = 0;
+let lastConfirmationTime = 0;
+let strategyStatusChannel = null;
+
+function initBridgeChannels() {
+    try {
+        cmdChannel = new BroadcastChannel(CMD_CHANNEL);
+        priceChannel = new BroadcastChannel(PRICE_CHANNEL);
+        confirmChannel = new BroadcastChannel(CONFIRM_CHANNEL);
+        
+        // Приём подтверждений от my-bot.html
+        confirmChannel.onmessage = (event) => {
+            const data = event.data;
+            if (data?.source !== 'my_bot_retranslator') return;
+            lastConfirmationTime = Date.now();
+            
+            if (data.type === 'order_confirmation') {
+                const pending = pendingCommands.get(data.commandId);
+                if (pending) {
+                    clearTimeout(pending.timeoutId);
+                    if (data.success) {
+                        addLog(`✅ Мост: ${data.action} #${data.commandId} исполнен`, 'bridge_confirm');
+                        pending.resolve(data);
+                    } else {
+                        addLog(`❌ Мост: ${data.action} #${data.commandId} — ${data.error || 'ошибка'}`, 'bridge_error');
+                        pending.reject(new Error(data.error || 'Execution failed'));
+                    }
+                    pendingCommands.delete(data.commandId);
+                }
+                updateBridgeFromConfirmation(data);
+            }
+            
+            if (data.type === 'balance_update') {
+                addLog(`💰 Мост: баланс получен`, 'bridge');
+            }
+            
+            if (data.type === 'position_update') {
+                addLog(`📊 Мост: позиции обновлены`, 'bridge');
+            }
+
+            if (data.type === 'status_update') {
+                lastConfirmationTime = Date.now();
+                if (data.status === 'ready') bridgeRetranslatorReady = true;
+                if (data.section) bridgeExchangeSection = data.section;
+                if (data.mode) bridgeExchangeMode = data.mode;
+                if (data.symbol) bridgeSymbol = data.symbol;
+                if (data.leverage) bridgeCurrentLeverage = parseInt(data.leverage) || 1;
+                updateBridgeStatusUI();
+            }
+        };
+        
+        // Приём цен от my-bot.html
+        priceChannel.onmessage = (event) => {
+            if (event.data?.type === 'price' && event.data?.price) {
+                const price = parseFloat(event.data.price);
+                if (!isNaN(price) && price > 0) {
+                    // Используем цену от моста только если WS не активен
+                    if (!wsConnected) {
+                        currentPrice = price;
+                        priceSource = 'bridge';
+                        if ($('currentPriceVal')) $('currentPriceVal').innerText = currentPrice.toFixed(2);
+                        if ($('priceSourceBadge')) {
+                            $('priceSourceBadge').innerHTML = 'Цена: Мост';
+                            $('priceSourceBadge').className = 'connection-chip live';
+                        }
+                    }
+                    lastPriceUpdate = Date.now();
+                }
+            }
+        };
+        
+        // Heartbeat: сброс статуса моста при отсутствии подтверждений
+        setInterval(() => {
+            if (bridgeRetranslatorReady && Date.now() - lastConfirmationTime > 10000) {
+                bridgeRetranslatorReady = false;
+                updateBridgeStatusUI();
+                addLog('⚠️ Мост потерян (нет подтверждений 10с)', 'bridge_error');
+            }
+        }, 5000);
+
+        // Сигнал готовности (отправляется retranslator'ом в my-bot.html)
+        setTimeout(() => {
+            // Если за 5 секунд не получили ready — считаем что мост недоступен
+            if (!bridgeRetranslatorReady) {
+                addLog('⚠️ Мост не ответил — работа в автономном режиме', 'bridge');
+            }
+        }, 5000);
+        
+        addLog('📡 Двусторонний мост v2.1 инициализирован', 'bridge');
+
+        // Отправка статуса стратегии каждые 3 секунды
+        try {
+            if (!strategyStatusChannel) {
+                strategyStatusChannel = new BroadcastChannel('trading_bot_strategy_status');
+            }
+            setInterval(() => {
+                if (!strategyStatusChannel) return;
+                const rates = calculateWinRate();
+                // Лог только для первой отправки в сессии
+                const isFirst = !window.strategyStatusSent;
+                if (isFirst) {
+                    addLog('📡 Strategy status отправлен (v' + BOT_VERSION + ')', 'bridge');
+                    window.strategyStatusSent = true;
+                }
+                console.log('📤 Отправка strategy_status:', BOT_VERSION, currentInstrument, botActive);
+                strategyStatusChannel.postMessage({
+                    source: 'my_bot_mind',
+                    type: 'strategy_status',
+                    version: BOT_VERSION,
+                    botActive: botActive,
+                    instrument: currentInstrument,
+                    timeframe: selectedTimeframe,
+                    deposit: virtualBalance,
+                    netProfit: netProfitSum,
+                    totalTrades: totalTradesCount,
+                    winRate: rates.winRate,
+                    risk: riskConfig.value + riskConfig.unit,
+                    leverage: bridgeCurrentLeverage || 1,
+                    positions: positions.map(p => ({
+                        side: p.side,
+                        size: p.size,
+                        entryPrice: p.entryPrice,
+                        unrealizedPnl: p.side === 'long' ?
+                            (currentPrice - p.entryPrice) * p.size * (p.leverage || 1) :
+                            (p.entryPrice - currentPrice) * p.size * (p.leverage || 1),
+                        initialMargin: p.marginUsed || 0,
+                        maintenanceMargin: p.maintenanceMargin || 0,
+                        liqPrice: p.liqPrice || 0,
+                        leverage: p.leverage || 1
+                    })),
+                    backstep: userBackstep,
+                    fractalPeriod: fractalPeriod,
+                    timestamp: Date.now()
+                });
+            }, 3000);
+        } catch(e) {}
+        
+    } catch(e) {
+        addLog('❌ BroadcastChannel не поддерживается: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+//  СИНХРОНИЗАЦИЯ С БИРЖОЙ (реальные позиции → виртуальные)
+// ============================================================
+let lastSyncTime = 0;
+const SYNC_INTERVAL = 10000; // 10 секунд
+
+async function syncWithExchange() {
+    if (!bridgeRetranslatorReady) return;
+    if (Date.now() - lastSyncTime < SYNC_INTERVAL) return;
+    lastSyncTime = Date.now();
+    
+    try {
+        // Получаем реальные позиции с биржи
+        const posResult = await sendCommand('syncPositions', { symbol: currentInstrument });
+        if (posResult.success && posResult.data?.positions) {
+            const realPositions = posResult.data.positions;
+            
+            // Сопоставляем с виртуальными позициями
+            for (const realPos of realPositions) {
+                const virtualPos = positions.find(p => 
+                    p.side === realPos.positionSide?.toLowerCase() && 
+                    Math.abs(p.size - realPos.positionAmt) < 0.0001
+                );
+                
+                if (!virtualPos && Math.abs(realPos.positionAmt) > 0.0001) {
+                    // Позиция есть на бирже, но нет в песочнице — возможно, открыта вручную
+                    addLog(`⚠️ Обнаружена позиция на бирже без виртуальной: ${realPos.positionSide} ${realPos.positionAmt} @ ${realPos.entryPrice}`, 'bridge');
+                    
+                    // Создаём виртуальную копию
+                    const liqInfo = calculateSandboxLiquidation(realPos.entryPrice, Math.abs(realPos.positionAmt), 
+                        realPos.positionSide?.toLowerCase(), realPos.leverage, virtualBalance, 'ISOLATED');
+                    
+                    positions.push({
+                        id: Date.now() + Math.random(),
+                        side: realPos.positionSide?.toLowerCase(),
+                        size: Math.abs(realPos.positionAmt),
+                        entryPrice: realPos.entryPrice,
+                        leverage: realPos.leverage,
+                        liqPrice: liqInfo.liqPrice,
+                        marginUsed: (Math.abs(realPos.positionAmt) * realPos.entryPrice) / realPos.leverage,
+                        notional: Math.abs(realPos.positionAmt) * realPos.entryPrice,
+                        fee: 0,
+                        isSynced: true
+                    });
+                    
+                    virtualBalance -= (Math.abs(realPos.positionAmt) * realPos.entryPrice) / realPos.leverage;
+                    recalculateLimits();
+                }
+            }
+            
+            // Проверяем, есть ли виртуальные позиции, которых нет на бирже
+            for (const virtualPos of positions.slice()) {
+                const realPos = realPositions.find(p => 
+                    p.positionSide?.toLowerCase() === virtualPos.side &&
+                    Math.abs(p.positionAmt - virtualPos.size) < 0.0001
+                );
+                
+                if (!realPos && virtualPos.isSynced) {
+                    // Позиция была на бирже, но закрылась (ликвидация или ручное закрытие)
+                    addLog(`⚠️ Позиция ${virtualPos.side} закрыта на бирже (возможно, ликвидация)`, 'bridge');
+                    
+                    // Возвращаем маржу
+                    virtualBalance += virtualPos.marginUsed || 0;
+                    positions = positions.filter(p => p.id !== virtualPos.id);
+                    recalculateLimits();
+                }
+            }
+            
+            updateUI();
+        }
+        
+        // Синхронизация баланса
+        const balanceResult = await sendCommand('syncBalance', {});
+        if (balanceResult.success && balanceResult.data?.usdt !== undefined) {
+            const realBalance = balanceResult.data.usdt;
+            if (Math.abs(realBalance - virtualBalance) > 10 && !$('syncBalanceCheck')?.checked) {
+                addLog(`💰 Баланс на бирже: $${realBalance.toFixed(2)} (песочница: $${virtualBalance.toFixed(2)})`, 'bridge');
+            }
+            
+            // Если включена синхронизация — корректируем виртуальный баланс
+            if ($('syncBalanceCheck')?.checked && Math.abs(realBalance - virtualBalance) > 1) {
+                const oldBalance = virtualBalance;
+                virtualBalance = realBalance;
+                addLog(`🔄 Баланс синхронизирован: $${oldBalance.toFixed(2)} → $${virtualBalance.toFixed(2)}`, 'bridge');
+                recalculateLimits();
+            }
+        }
+        
+    } catch (e) {
+        addLog(`⚠️ Ошибка синхронизации: ${e.message}`, 'bridge');
+    }
+}
+
+// Запускаем периодическую синхронизацию
+setInterval(() => syncWithExchange(), SYNC_INTERVAL);
+
+function updateBridgeFromConfirmation(data) {
+    if (data.status === 'ready') {
+        bridgeRetranslatorReady = true;
+        if (data.mode) bridgeExchangeMode = data.mode;
+        if (data.section) bridgeExchangeSection = data.section;
+        if (data.symbol) bridgeSymbol = data.symbol;
+        if (data.leverage) bridgeCurrentLeverage = parseInt(data.leverage) || 1;
+        addLog('✅ Мост готов: ' + bridgeExchangeSection + ' | ' + bridgeExchangeMode + 
+               (bridgeCurrentLeverage > 1 ? ' | Плечо ×' + bridgeCurrentLeverage : ''), 'bridge_confirm');
+        updateBridgeStatusUI();
+    }
+    if (data.leverage) {
+        bridgeCurrentLeverage = parseInt(data.leverage) || 1;
+        updateBridgeStatusUI();
+    }
+}
+
+function sendCommand(action, params = {}) {
+    return new Promise((resolve, reject) => {
+        const id = ++commandIdCounter;
+        const message = {
+            source: 'my_bot_mind',
+            version: BOT_VERSION,
+            commandId: id,
+            timestamp: Date.now(),
+            action: action,
+            params: params,
+            requireConfirmation: true
+        };
+        
+        const timeoutId = setTimeout(() => {
+            pendingCommands.delete(id);
+            addLog(`⏰ Таймаут: ${action} #${id}`, 'bridge_error');
+            reject(new Error(`Timeout: ${action}`));
+        }, 30000);
+        
+        pendingCommands.set(id, { 
+            resolve: (data) => { clearTimeout(timeoutId); resolve(data); },
+            reject: (err) => { clearTimeout(timeoutId); reject(err); },
+            timeoutId: timeoutId,
+            action, params, timestamp: Date.now()
+        });
+        
+        try {
+            cmdChannel.postMessage(message);
+            addLog(`📤 ${action} #${id}: ${params.symbol || ''} ${params.quantity || ''}`, 'bridge');
+        } catch(e) {
+            clearTimeout(timeoutId);
+            pendingCommands.delete(id);
+            reject(e);
+        }
+    });
+}
+
+// === PROXY ФУНКЦИИ ===
+async function proxyMarketBuy(symbol, quantity) {
+    try {
+        var qty = parseFloat(quantity);
+        if (qty * currentPrice < 10) {
+            qty = 10 / currentPrice;
+        }
+
+        var normalizeCheck = document.getElementById('normalizeQtyCheck');
+        var shouldNormalize = normalizeCheck ? normalizeCheck.checked : true;
+
+        if (shouldNormalize) {
+            var manualStep = document.getElementById('manualStepSize')?.value;
+            var stepSize;
+            if (manualStep) {
+                stepSize = manualStep;
+            } else {
+                var stepSizeResp = await sendCommand('getSymbolInfo', { symbol: symbol });
+                stepSize = stepSizeResp.data?.stepSize || '0.001';
+            }
+            qty = roundToStepSize(qty, stepSize);
+            addLog('Normalized qty: ' + qty + ' (step=' + stepSize + ')', 'bridge');
+        }
+
+        const result = await sendCommand('marketBuy', { 
+            symbol: symbol, 
+            quantity: qty,
+            virtualDeposit: virtualBalance,
+            virtualLeverage: bridgeCurrentLeverage
+        });
+        return result;
+    } catch(e) { addLog('❌ BUY: ' + e.message, 'bridge_error'); throw e; }
+}
+
+async function proxyMarketSell(symbol, quantity) {
+    try {
+        var qty = parseFloat(quantity);
+        if (qty * currentPrice < 10) {
+            qty = 10 / currentPrice;
+        }
+
+        var normalizeCheck = document.getElementById('normalizeQtyCheck');
+        var shouldNormalize = normalizeCheck ? normalizeCheck.checked : true;
+
+        if (shouldNormalize) {
+            var manualStep = document.getElementById('manualStepSize')?.value;
+            var stepSize;
+            if (manualStep) {
+                stepSize = manualStep;
+            } else {
+                var stepSizeResp = await sendCommand('getSymbolInfo', { symbol: symbol });
+                stepSize = stepSizeResp.data?.stepSize || '0.001';
+            }
+            qty = roundToStepSize(qty, stepSize);
+            addLog('Normalized qty: ' + qty + ' (step=' + stepSize + ')', 'bridge');
+        }
+
+        const result = await sendCommand('marketSell', { 
+            symbol: symbol, 
+            quantity: qty,
+            virtualDeposit: virtualBalance,
+            virtualLeverage: bridgeCurrentLeverage
+        });
+        return result;
+    } catch(e) { addLog('❌ SELL: ' + e.message, 'bridge_error'); throw e; }
+}
+
+async function proxyClosePosition(symbol) {
+    try {
+        if (bridgeExchangeSection && bridgeExchangeSection.includes('FUTURES')) {
+            // Для Futures — родной closePosition
+            const result = await sendCommand('closePosition', { symbol });
+            return result;
+        } else {
+            // Для Spot — закрываем локально, на бирже ничего не делаем
+            return { success: true };
+        }
+    } catch(e) { addLog(`❌ Close: ${e.message}`, 'bridge_error'); throw e; }
+}
+
+async function proxyCloseAllPositions() {
+    try {
+        if (bridgeExchangeSection && bridgeExchangeSection.includes('FUTURES')) {
+            // Для Futures — родной closeAllPositions
+            const result = await sendCommand('closeAllPositions', {});
+            return result;
+        } else {
+            // Для Spot — закрываем локально
+            return { success: true };
+        }
+    } catch(e) { addLog(`❌ CloseAll: ${e.message}`, 'bridge_error'); throw e; }
+}
+
+async function proxySetLeverage(symbol, leverage) {
+    try {
+        const result = await sendCommand('setLeverage', { symbol, leverage });
+        if (result?.success) bridgeCurrentLeverage = leverage;
+        return result;
+    } catch(e) { addLog(`❌ Leverage: ${e.message}`, 'bridge_error'); throw e; }
+}
+
+// === ПЕРИОДИЧЕСКАЯ СИНХРОНИЗАЦИЯ ===
+setInterval(() => {
+    if (bridgeRetranslatorReady) {
+        // Запрашиваем обновление статуса
+        sendCommand('getAccount', {}).catch(() => {});
+    }
+}, 60000);
+
+// === ИНИЦИАЛИЗАЦИЯ BRIDGE ===
+initBridgeChannels();
+
+async function loadHistoryBars(){try{var r=await fetch('https://api.binance.com/api/v3/klines?symbol='+currentInstrument+'&interval='+selectedTimeframe+'&limit=10');if(!r.ok)return;var d=await r.json();if(!Array.isArray(d)||d.length===0)return;d.forEach(function(k){var bt=k[6]||k[0];realTimeBars.push({open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]),volume:parseFloat(k[5]),timestamp:bt,index:realTimeBars.length})});realTimeBars.sort(function(a,b){return a.timestamp-b.timestamp});realTimeBars.forEach(function(b,i){b.index=i});currentPrice=realTimeBars[realTimeBars.length-1].close;addLog('Загружено '+d.length+' исторических баров')}catch(e){}}
+
+async function boot(){
+    loadSettingsFromUI(false);
+    updateFlagStyles();
+    loadTradingView();
+    initHeightControl();
+    seedInitialBars();
+    await loadHistoryBars();
+    subscribeToTimeframe(selectedTimeframe,currentInstrument);
+    updateUI();
+    updateLogUI();
+    addLog('v'+BOT_VERSION+' готов | Мост: '+'BroadcastChannel','info');
+    
+    if(typeof window!=='undefined'){
+        setTimeout(async function(){
+            if(bridgeRetranslatorReady){
+                try {
+                    var marginInfo = await sendCommand('getMarginInfo', { 
+                        symbol: currentInstrument,
+                        virtualDeposit: virtualBalance 
+                    });
+                    if(marginInfo.success && marginInfo.data){
+                        window.symbolMaxLeverage = marginInfo.data.leverage?.exchangeMax || 125;
+                        window.symbolMinQty = 0.001;
+                        addLog('📊 Маржа: макс.плечо ×' + window.symbolMaxLeverage + 
+                               ' | Депозит $' + virtualBalance.toFixed(2), 'info');
+                    }
+                } catch(e) {}
+            }
+        }, 3000);
+    }
+}
+
+boot();
+</script>
+</body>
+</html>

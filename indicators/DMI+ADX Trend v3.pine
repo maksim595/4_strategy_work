@@ -1,0 +1,16 @@
+//@version=6
+indicator("DMI+ADX Signal", overlay=true)
+
+diLen    = input.int(14, "DI Length", minval=1, maxval=100)
+adxLen   = input.int(14, "ADX Smoothing", minval=1, maxval=100)
+adxThr   = input.float(20.0, "ADX Threshold", minval=0, maxval=100, step=1.0)
+
+[diPlus, diMinus, adxVal] = ta.dmi(diLen, adxLen)
+
+buySignal  = ta.crossover(diPlus, diMinus) and adxVal > adxThr
+sellSignal = ta.crossover(diMinus, diPlus) and adxVal > adxThr
+
+plot(buySignal  ? low  : na, "BuyAnchor",  color=color.new(color.green, 100), display=display.none)
+plot(sellSignal ? high : na, "SellAnchor", color=color.new(color.red,   100), display=display.none)
+plotshape(buySignal,  "BUY",  shape.labelup,   location.belowbar, color=color.green, text="BUY",  size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red,   text="SELL", size=size.small)

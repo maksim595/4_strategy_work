@@ -1,0 +1,16 @@
+//@version=6
+indicator("DMI+ADX Signal (debug)", overlay=true)
+
+[diPlus, diMinus, adxVal] = ta.dmi(14, 14)
+
+buySignal = ta.crossover(diPlus, diMinus) and adxVal > 20
+sellSignal = ta.crossover(diMinus, diPlus) and adxVal > 20
+
+// Отладка: принудительно выводим значения в data window,
+// чтобы проверить, что сигналы вообще есть
+plot(buySignal ? 1 : 0, "BuyDebug", color=color.green, display=display.data_window)
+plot(sellSignal ? 1 : 0, "SellDebug", color=color.red, display=display.data_window)
+
+// Исходная форма, которая работала в бэктесте
+plotshape(buySignal, "BUY", shape.labelup, location.belowbar, color=color.green, text="BUY", size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red, text="SELL", size=size.small)

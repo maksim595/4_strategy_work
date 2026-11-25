@@ -1,0 +1,10 @@
+//@version=6
+indicator("EMA Cross", overlay=true)
+fast = input.int(9, "Fast EMA", minval=1, maxval=100)
+slow = input.int(21, "Slow EMA", minval=1, maxval=200)
+e_fast = ta.ema(close, fast)
+e_slow = ta.ema(close, slow)
+plot(e_fast, "Fast", color=color.aqua, linewidth=2)
+plot(e_slow, "Slow", color=color.yellow, linewidth=2)
+plotshape(ta.crossover(e_fast, e_slow), "BUY", shape.labelup, location.belowbar, color=color.green, text="BUY", size=size.small)
+plotshape(ta.crossunder(e_fast, e_slow), "SELL", shape.labeldown, location.abovebar, color=color.red, text="SELL", size=size.small)

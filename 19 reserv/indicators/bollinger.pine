@@ -1,0 +1,8 @@
+//@version=6
+indicator("Bollinger", overlay=true)
+length = input.int(20, "Length", minval=1)
+mult = input.float(2.0, "Multiplier", minval=0.1, step=0.1)
+[middle, upper, lower] = ta.bb(close, length, mult)
+plot(middle, "BB Middle", color=color.gray, linewidth=1)
+plot(upper, "BB Upper", color=color.blue, linewidth=2)
+plot(lower, "BB Lower", color=color.blue, linewidth=2)

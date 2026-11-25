@@ -1,0 +1,19 @@
+//@version=6
+indicator("RSI Simple Signals", overlay=false)
+
+rsi = ta.rsi(close, 14)
+
+// Рисуем RSI для отладки (видно что индикатор работает)
+plot(rsi, "RSI Line", color=color.purple, linewidth=2)
+
+// Уровни 45/55 для ОЧЕНЬ частых сигналов (каждые 2-3 бара)
+hline(45, "Buy Zone", color=color.green, linestyle=hline.style_dashed)
+hline(55, "Sell Zone", color=color.red, linestyle=hline.style_dashed)
+hline(50, "Middle", color=color.gray, linestyle=hline.style_dotted)
+
+// Очень мягкие условия — срабатывают часто
+buySignal = rsi < 45
+sellSignal = rsi > 55
+
+plotshape(buySignal, "BUY", shape.labelup, location.top, color=color.green, text="BUY", size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.bottom, color=color.red, text="SELL", size=size.small)

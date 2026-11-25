@@ -1,0 +1,19 @@
+//@version=6
+indicator("UT Bot Signal", overlay=true)
+
+atr   = ta.atr(14)
+nLoss = 1.0 * atr
+
+var float xATRTrailingStop = na
+xATRTrailingStop := close > nz(xATRTrailingStop[1], 0) and close[1] > nz(xATRTrailingStop[1], 0) ? math.max(nz(xATRTrailingStop[1]), close - nLoss) : close < nz(xATRTrailingStop[1], 0) and close[1] < nz(xATRTrailingStop[1], 0) ? math.min(nz(xATRTrailingStop[1]), close + nLoss) : close > nz(xATRTrailingStop[1], 0) ? close - nLoss : close + nLoss
+
+buySignal  = ta.crossover(close, xATRTrailingStop)
+sellSignal = ta.crossunder(close, xATRTrailingStop)
+
+plot(xATRTrailingStop, "UT Bot", color=close > xATRTrailingStop ? color.green : color.red, linewidth=2)
+
+plot(buySignal  ? low  : na, "BuyAnchor",  color=color.new(color.green, 100), display=display.none)
+plot(sellSignal ? high : na, "SellAnchor", color=color.new(color.red,   100), display=display.none)
+
+plotshape(buySignal,  "BUY",  shape.labelup,   location.belowbar, color=color.green, text="BUY",  size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red,   text="SELL", size=size.small)

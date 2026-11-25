@@ -1,0 +1,11 @@
+//@version=6
+indicator("RSI Simple Signals", overlay=true)
+
+rsi = ta.rsi(close, 14)
+
+// Простые условия — срабатывают часто
+buySignal = rsi < 30
+sellSignal = rsi > 70
+
+plotshape(buySignal, "BUY", shape.labelup, location.belowbar, color=color.green, text="BUY", size=size.small)
+plotshape(sellSignal, "SELL", shape.labeldown, location.abovebar, color=color.red, text="SELL", size=size.small)
